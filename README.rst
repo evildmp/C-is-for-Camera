@@ -3,7 +3,7 @@ Camera
 
 A 35mm camera, simulated in Python.
 
-Based on the Canonet GIII QL17.
+Based on the Canonet G-III QL17.
 
 
 Get started
@@ -83,3 +83,14 @@ Components of the camera
   * LensCap
 
 * Environment
+
+
+Why?
+----
+
+I love film cameras and their mechanisms, and spend a lot of time repairing and servicing them. The mechanisms in a
+camera are full of functional logic, and thinking about how they change their own state and trigger changes in and
+depend on the mechanisms they are connected to is the same kind of thinking that goes on in object-oriented programming.
+
+This project is an experiement in expressing the logic of a camera - in this case, a `Canonet G-III QL17
+<https://en.wikipedia.org/wiki/Canonet_G-III_QL17>`_ rangefinder, one of my favourites - in code.
