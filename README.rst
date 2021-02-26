@@ -53,7 +53,7 @@ represented Python classes)::
     ------------------ Environment ------------------
     Scene luminosity:           4096 cd/m^2
 
-The lens cap is off, so let's try take a photo. First, advance the film::
+The lens cap is off, so let's try to take a photo. First, advance the film::
 
 
     >>> c.film_advance_mechanism.advance()
@@ -68,3 +68,18 @@ fire the shutter::
     Shutter closes
     Shutter opened for 1/128 seconds
     Shutter uncocked
+
+
+Components of the camera
+------------------------
+
+* Camera
+
+  * FilmAdvanceMechanism
+  * Shutter
+  * ExposureControlSystem
+  * LightMeter
+  * Back
+  * LensCap
+
+* Environment
