@@ -70,6 +70,14 @@ fire the shutter::
     Shutter uncocked
 
 
+How to run tests
+----------------
+
+Tests are in ``test_camera.py`` and require pytest.
+
+Install pytest, and run: ``pytest``.
+
+
 Reference
 ---------
 
