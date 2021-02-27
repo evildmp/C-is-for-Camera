@@ -44,10 +44,18 @@ class FilmAdvanceMechanism:
     def advance(self):
         if self.camera and self.camera.shutter:
             try:
-                self.advanced = True
                 self.camera.shutter.cock()
             except self.camera.shutter.AlreadyCocked:
                 pass
+
+        if self.advanced:
+            raise self.AlreadyAdvanced
+        else:
+            self.advanced = True
+
+    class AlreadyAdvanced(Exception):
+        pass
+
 
 class Shutter:
     # The shutter is closed by default.
@@ -68,6 +76,7 @@ class Shutter:
         print("Shutter opened for 1/{} seconds".format(int(1/self.timer)))
         self.cocked = False
         print("Shutter uncocked")
+        return "Tripped"
 
     def cock(self):
         if self.cocked:
@@ -77,6 +86,7 @@ class Shutter:
             print("Cocking shutter")
             self.cocked = True
             print("Cocked")
+            return "Cocked"
 
     class AlreadyCocked(Exception):
         pass
