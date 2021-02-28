@@ -2,7 +2,7 @@ import time, math
 
 class Camera:
     def __init__(self):
-        self.shutter = Shutter()
+        self.shutter = Shutter(camera=self)
         self.iris = Iris()
         self.back = Back()
         self.exposure_control_system = ExposureControlSystem(mode="Shutter priority", camera=self, battery=1.44)
@@ -59,7 +59,8 @@ class FilmAdvanceMechanism:
 
 class Shutter:
     # The shutter is closed by default.
-    def __init__(self, timer=1/128, closed=True, cocked=False):
+    def __init__(self, camera=None, timer=1/128, closed=True, cocked=False):
+        self.camera = camera
         self.timer = timer
         self.closed = closed
         self.cocked = cocked
@@ -75,6 +76,10 @@ class Shutter:
         print("Shutter closes")
         self.cocked = False
         print("Shutter uncocked")
+
+        if self.camera:
+            self.camera.film_advance_mechanism.advanced = False
+
         return "Tripped"
 
     def cock(self):

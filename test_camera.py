@@ -1,6 +1,6 @@
 import pytest
 
-from camera import Shutter, FilmAdvanceMechanism
+from camera import Camera, Shutter, FilmAdvanceMechanism
 
 
 class TestShutter(object):
@@ -39,3 +39,21 @@ class TestFilmAdvanceMechanism(object):
         self.f.advanced = True
         with pytest.raises(FilmAdvanceMechanism.AlreadyAdvanced):
             self.f.advance()
+
+
+class TestFilmAdvanceMechanismShutterInterlock(object):
+
+    def test_film_advance_cocks_shutter(self):
+        # advancing film cocks shutter
+        c = Camera()
+        c.film_advance_mechanism.advance()
+        assert c.shutter.cocked == True
+
+        # after the film has been advanced, it can't be advanced again
+        with pytest.raises(FilmAdvanceMechanism.AlreadyAdvanced):
+            c.film_advance_mechanism.advance()
+
+        # after tripping the shutter, it can be advanced
+        assert c.shutter.trip() == "Tripped"
+        c.film_advance_mechanism.advance()
+        assert c.film_advance_mechanism.advanced == True
