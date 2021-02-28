@@ -1,9 +1,13 @@
 Camera
 ======
 
-A 35mm camera, simulated in Python.
+A 35mm camera, based on the `Canonet G-III QL17 <https://en.wikipedia.org/wiki/Canonet_G-III_QL17>`_ rangefinder,
+simulated in Python.
 
-Based on the Canonet G-III QL17.
+The purpose of this project is to explore and understand the logic in the mechanisms of a camera by using
+object-oriented programming to simulate real-world objects.
+
+See "Understanding Camera" below for more about *how* the camera is simulated.
 
 
 Get started
@@ -99,7 +103,7 @@ Components of the camera
 Exceptions
 ~~~~~~~~~~
 
-Exceptions occur when you try to do something that the camera refuses to do because itviolates the logic of a mechanism
+Exceptions occur when you try to do something that the camera refuses to do because it violates the logic of a mechanism
 of the camera. For example, if the shutter is already cocked, trying to call the shutter's ``cock()`` method will raise
 a ``Shutter.AlreadyCocked`` exception; it's not logically possible to cock a shutter that's already cocked.
 
@@ -110,8 +114,36 @@ On the other hand, attempting to call ``Shutter.trip()`` when the shutter is not
 violate the logic, it just doesn't have any effect.
 
 
+Explanation
+-----------
+
+Understanding ``Camera``
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+A camera is an instance of the ``Camera`` class. When a ``Camera`` is instantiated (``c = Camera()``), it's
+initialised along with a number of objects.
+
+For example, a camera has a shutter that is usually closed and blinks open to allow in light when you take a
+photograph; the shutter is ``c.shutter``, and can be open or closed, cocked or uncocked, and has a timer (how long it
+remains open when it's released).
+
+Oher examples are a film advance mechanism, and an exposure mechanism. Many of these subsystems interact with each
+other. For example in this camera, advancing the film also cocks the shutter.
+
+Actions that you'd perform with a physical camera are methods of the Python objects. For example, once you have
+instantiated a camera, you can advance the film, then trip the shutter::
+
+    >>> c = Camera()
+    >>> c.film_advance_mechanism.advance()
+    >>> c.shutter.trip()
+    Shutter openening for 1/128 seconds
+    Shutter closes
+    Shutter uncocked
+    'Tripped'
+
+
 Why?
-----
+~~~~
 
 I love film cameras and their mechanisms, and spend a lot of time repairing and servicing them. The mechanisms in a
 camera are full of functional logic, and thinking about how they change their own state and trigger changes in and

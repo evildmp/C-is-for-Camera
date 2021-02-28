@@ -69,11 +69,10 @@ class Shutter:
         # nothing at all happens.
         if not self.closed or not self.cocked:
             return
-        print("Shutter opens")
+        print(f"Shutter openening for 1/{int(1/self.timer)} seconds")
         time.sleep(self.timer)
         self.closed = True
         print("Shutter closes")
-        print("Shutter opened for 1/{} seconds".format(int(1/self.timer)))
         self.cocked = False
         print("Shutter uncocked")
         return "Tripped"
