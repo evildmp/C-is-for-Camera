@@ -5,40 +5,42 @@ from camera import Camera, Shutter, FilmAdvanceMechanism
 
 class TestShutter(object):
 
-    shutter = Shutter()
 
     def test_trip_when_uncocked(self):
-        assert self.shutter.closed == True
-        assert self.shutter.trip() == None
-        assert self.shutter.closed == True
+        shutter = Shutter()
+        assert shutter.closed == True
+        assert shutter.trip() == None
+        assert shutter.closed == True
 
     def test_trip_when_cocked(self):
-        self.shutter.cocked = False
-        self.shutter.cock()
-        assert self.shutter.closed == True
-        assert self.shutter.cocked == True
-        assert self.shutter.trip() == "Tripped"
-        assert self.shutter.closed == True
+        shutter = Shutter()
+        shutter.cock()
+        assert shutter.closed == True
+        assert shutter.cocked == True
+        assert shutter.trip() == "Tripped"
+        assert shutter.closed == True
+        assert shutter.cocked == False
 
     def test_cock_when_cocked(self):
-        self.shutter.cock()
+        shutter = Shutter()
+        shutter.cock()
         with pytest.raises(Shutter.AlreadyCocked):
-            self.shutter.cock()
+            shutter.cock()
 
 
 class TestFilmAdvanceMechanism(object):
 
-    f = FilmAdvanceMechanism()
-
     def test_advance_film(self):
-        assert self.f.advanced == False
-        self.f.advance()
-        assert self.f.advanced == True
+        f = FilmAdvanceMechanism()
+        assert f.advanced == False
+        f.advance()
+        assert f.advanced == True
 
     def test_advance_film_twice(self):
-        self.f.advanced = True
+        f = FilmAdvanceMechanism()
+        f.advance()
         with pytest.raises(FilmAdvanceMechanism.AlreadyAdvanced):
-            self.f.advance()
+            f.advance()
 
 
 class TestFilmAdvanceMechanismShutterInterlock(object):
