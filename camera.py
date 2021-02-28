@@ -95,10 +95,12 @@ class Shutter:
     class AlreadyCocked(Exception):
         pass
 
+
 class Iris:
 
     def __init__(self, aperture=16):
         self.aperture = aperture
+
 
 class ExposureControlSystem:
 
@@ -133,6 +135,7 @@ class ExposureControlSystem:
             else:
                 aperture = target_aperture
             self.camera.iris.aperture = aperture
+
 
 class LightMeter:
 
@@ -175,10 +178,12 @@ class Back:
             print("Opening back")
         print("Back is open")
 
+
 class LensCap:
     # The lens cap is on by default.
     def __init__(self, on=True):
         self.on = on
+
 
 class Environment:
     def __init__(self, scene_luminosity = 4096):

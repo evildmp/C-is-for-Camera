@@ -33,7 +33,7 @@ And find out what state it's in, using the ``state()`` method::
     >>> c.state()
 
 ``state()`` reports on the state of the camera, which includes its various subsystems (which themselves are also
-represented Python classes)::
+represented by Python classes)::
 
 
     ================== Camera state =================
