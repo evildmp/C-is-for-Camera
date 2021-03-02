@@ -25,7 +25,7 @@ class Camera:
 
         print("------------------ Metering ---------------------")
         print(f"Light meter reading:        {self.exposure_control_system.light_meter.reading()} cd/m^2")
-        print(f"Exposure target:            {self.exposure_control_system.target_ev()} EV")
+        print(f"Exposure target:            {self.exposure_control_system.measured_ev()} EV")
         print(f"Mode:                       {self.exposure_control_system.mode}")
         print(f"Battery:                    {self.exposure_control_system.battery} V")
         print(f"Film speed:                 {self.exposure_control_system.film_speed} ISO")
@@ -116,7 +116,7 @@ class ExposureControlSystem:
 
         self.light_meter = LightMeter(camera=self.camera, battery=self.battery)
 
-    def target_ev(self):
+    def measured_ev(self):
         if self.light_meter.reading():
             return math.log(
                 (self.light_meter.reading() * self.film_speed/12.5),2
@@ -129,7 +129,8 @@ class ExposureControlSystem:
             pass
         elif self.mode == "Shutter priority":
             timer = self.camera.shutter.timer
-            target_aperture = math.pow(2, self.target_ev()/2) * math.sqrt(timer)
+            target_aperture = math.pow(2, self.measured_ev()/2) * math.sqrt(timer)
+            print(target_aperture)
             if target_aperture < 1.7:
                 aperture = 1.7
             else:
@@ -139,7 +140,7 @@ class ExposureControlSystem:
 
 class LightMeter:
 
-    def __init__(self, camera=None, incident_light = 0, battery=None):
+    def __init__(self, camera=None, incident_light=0, battery=None):
         self.camera = camera
         self.incident_light = incident_light
         self.battery = battery
@@ -186,5 +187,5 @@ class LensCap:
 
 
 class Environment:
-    def __init__(self, scene_luminosity = 4096):
+    def __init__(self, scene_luminosity=4096):
         self.scene_luminosity = scene_luminosity
