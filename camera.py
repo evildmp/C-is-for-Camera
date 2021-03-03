@@ -8,6 +8,7 @@ class Camera:
         self.exposure_control_system = ExposureControlSystem(mode="Shutter priority", camera=self, battery=1.44)
         self.film_advance_mechanism = FilmAdvanceMechanism(camera=self)
         self.lens_cap = LensCap(on=False)
+        self.film = Film()
         self.environment = Environment()
 
     def state(self):
@@ -35,23 +36,23 @@ class Camera:
         print(f"Scene luminosity:           {self.environment.scene_luminosity} cd/m^2")
 
 
-
 class FilmAdvanceMechanism:
     def __init__(self, camera=None):
         self.camera = camera
         self.advanced = False
 
     def advance(self):
-        if self.camera and self.camera.shutter:
-            try:
-                self.camera.shutter.cock()
-            except self.camera.shutter.AlreadyCocked:
-                pass
-
         if self.advanced:
             raise self.AlreadyAdvanced
+
         else:
+            if self.camera and self.camera.film:
+                self.camera.film.advance()
+
             self.advanced = True
+
+            if self.camera and self.camera.shutter:
+                self.camera.shutter.cock()
 
     class AlreadyAdvanced(Exception):
         pass
@@ -184,6 +185,22 @@ class LensCap:
     # The lens cap is on by default.
     def __init__(self, on=True):
         self.on = on
+
+
+class Film:
+    def __init__(self, speed=100, frames=24):
+        self.speed = speed
+        self.frames = frames
+        self.frame = 0
+
+    def advance(self):
+        if self.frame < self.frames:
+            self.frame += 1
+        else:
+            raise self.NoMoreFrames
+
+    class NoMoreFrames(Exception):
+        pass
 
 
 class Environment:

@@ -1,6 +1,6 @@
 import pytest, math
 
-from camera import Camera, Shutter, FilmAdvanceMechanism, LightMeter, ExposureControlSystem
+from camera import Camera, Shutter, FilmAdvanceMechanism, LightMeter, ExposureControlSystem, Film
 
 
 class TestShutter(object):
@@ -41,6 +41,14 @@ class TestFilmAdvanceMechanism(object):
         f.advance()
         with pytest.raises(FilmAdvanceMechanism.AlreadyAdvanced):
             f.advance()
+
+    def test_advance_film_mechanism_with_film(self):
+        c = Camera()
+        c.film = Film(frames=1)
+        c.film_advance_mechanism.advance()
+        c.shutter.trip()
+        with pytest.raises(Film.NoMoreFrames):
+            c.film_advance_mechanism.advance()
 
 
 class TestFilmAdvanceMechanismShutterInterlock(object):
@@ -145,3 +153,11 @@ class TestExposureControlSystem(object):
         c.exposure_control_system.act()
         assert c.iris.aperture == 1.7
 
+
+class TestFilm(object):
+
+    def test_no_more_film(self):
+        f = Film(frames=1)
+        f.advance()
+        with pytest.raises(Film.NoMoreFrames):
+            f.advance()
