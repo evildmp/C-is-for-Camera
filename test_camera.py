@@ -3,6 +3,15 @@ import pytest, math
 from camera import Camera, Shutter, FilmAdvanceMechanism, LightMeter, ExposureControlSystem, Film
 
 
+class TestCamera(object):
+
+    def test_film_advance_increments_counter(self):
+        c = Camera()
+        c.film_advance_mechanism.advance()
+        c.shutter.trip()
+        assert c.frame_counter == 1
+
+
 class TestShutter(object):
 
 
@@ -49,6 +58,15 @@ class TestFilmAdvanceMechanism(object):
         c.shutter.trip()
         with pytest.raises(Film.NoMoreFrames):
             c.film_advance_mechanism.advance()
+
+class TestFilmRewindMechanism(object):
+
+    def test_rewind_film_mechanism_with_film(self):
+        c = Camera()
+        c.film.frame = 10
+        c.film_rewind_mechanism.rewind()
+        assert c.film.frame == 0
+        assert c.film.fully_rewound == True
 
 
 class TestFilmAdvanceMechanismShutterInterlock(object):
@@ -161,3 +179,34 @@ class TestFilm(object):
         f.advance()
         with pytest.raises(Film.NoMoreFrames):
             f.advance()
+
+class TestBack(object):
+
+    def test_opening_resets_frame_counter_and_does_not_harm_film(self):
+        c = Camera()
+        c.frame_counter = 5
+        c.back.open()
+        assert c.frame_counter == 0
+        assert c.back.open() != "Film is ruined"
+        assert c.film.ruined == False
+
+    def test_opening_back_in_daylight_ruins_film(self):
+        c = Camera()
+        c.film.frame = 5
+        assert c.back.open() == "Film is ruined"
+        assert c.film.ruined == True
+
+    def test_opening_back_in_dark_is_ok(self):
+        c = Camera()
+        c.environment.scene_luminosity = 0
+        c.film.frame = 5
+        assert c.back.open() != "Film is ruined"
+        assert c.film.ruined == False
+
+    def test_opening_with_rewound_film_is_ok(self):
+        c = Camera()
+        c.film.frame = 5
+        c.film_rewind_mechanism.rewind()
+        assert c.back.open() != "Film is ruined"
+        assert c.film.ruined == False
+

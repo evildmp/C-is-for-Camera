@@ -4,12 +4,14 @@ class Camera:
     def __init__(self):
         self.shutter = Shutter(camera=self)
         self.iris = Iris()
-        self.back = Back()
+        self.back = Back(camera=self)
         self.exposure_control_system = ExposureControlSystem(mode="Shutter priority", camera=self, battery=1.44)
         self.film_advance_mechanism = FilmAdvanceMechanism(camera=self)
+        self.film_rewind_mechanism = FilmRewindMechanism(camera=self)
         self.lens_cap = LensCap(on=False)
-        self.film = Film()
+        self.film = Film(camera=self)
         self.environment = Environment()
+        self.frame_counter = 0
 
     def state(self):
         print("================== Camera state =================")
@@ -18,6 +20,7 @@ class Camera:
         print(f"Back closed:               {self.back.closed}")
         print(f"Lens cap on:               {self.lens_cap.on}")
         print(f"Film advance mechanism:    {self.film_advance_mechanism.advanced}")
+        print(f"Frame counter:             {self.frame_counter}")
         print(f"Shutter cocked:            {self.shutter.cocked}")
         print(f"Shutter timer:             1/{1/self.shutter.timer} seconds")
         print(f"Iris aperture:             ƒ/{self.iris.aperture}")
@@ -30,6 +33,13 @@ class Camera:
         print(f"Mode:                       {self.exposure_control_system.mode}")
         print(f"Battery:                    {self.exposure_control_system.battery} V")
         print(f"Film speed:                 {self.exposure_control_system.film_speed} ISO")
+        print()
+
+        print("------------------ Film -------------------------")
+        print(f"Speed:                      {self.film.speed} ISO")
+        print(f"Rewound into cartridge:     {self.film.fully_rewound}")
+        print(f"Exposed frames:             {self.film.frame} (of {self.film.frames})")
+        print(f"Ruined:                     {self.film.ruined}")
         print()
 
         print("------------------ Environment ------------------")
@@ -56,6 +66,17 @@ class FilmAdvanceMechanism:
 
     class AlreadyAdvanced(Exception):
         pass
+
+
+class FilmRewindMechanism:
+    def __init__(self, camera=None):
+        self.camera = camera
+
+    def rewind(self):
+        if self.camera.film:
+            self.camera.film.frame = 0
+            self.camera.film.fully_rewound = True
+            print("Rewinding film")
 
 
 class Shutter:
@@ -165,20 +186,25 @@ class LightMeter:
 
 class Back:
     # The back is closed by default.
-    def __init__(self, closed=True):
+    def __init__(self, camera, closed=True):
         self.closed = closed
+        self.camera = camera
 
     def close(self):
         if not self.closed:
             self.closed = True
             print("Closing back")
-        print("Back is closed")
 
     def open(self):
         if self.closed:
             self.closed = False
             print("Opening back")
-        print("Back is open")
+            self.camera.frame_counter = 0
+            if self.camera.film.frame > 0:
+                print("Resetting frame counter to 0")
+                if self.camera.environment.scene_luminosity > 0 and self.camera.film:
+                    self.camera.film.ruined = True
+                    return "Film is ruined"
 
 
 class LensCap:
@@ -188,16 +214,25 @@ class LensCap:
 
 
 class Film:
-    def __init__(self, speed=100, frames=24):
+    def __init__(self, speed=100, frames=24, camera=None, fully_rewound=False):
         self.speed = speed
         self.frames = frames
         self.frame = 0
+        self.camera = camera
+        self.fully_rewound = fully_rewound
+        self.ruined = False
 
     def advance(self):
-        if self.frame < self.frames:
-            self.frame += 1
-        else:
-            raise self.NoMoreFrames
+        if not self.fully_rewound:
+            print(f"On frame {self.frame} (of {self.frames})")
+            print("Advancing film")
+            if self.frame < self.frames:
+                self.frame += 1
+                if self.camera and self.camera.back.closed == True:
+                    self.camera.frame_counter += 1
+                print(f"On frame {self.frame} (of {self.frames})")
+            else:
+                raise self.NoMoreFrames
 
     class NoMoreFrames(Exception):
         pass
