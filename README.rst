@@ -7,6 +7,9 @@ simulated in Python.
 The purpose of this project is to explore and understand the logic in the mechanisms of a camera by using
 object-oriented programming to simulate real-world objects.
 
+.. image:: /docs/images/QL17.jpg
+   :alt: 'Canonet G-III QL17'
+
 It aims towards completeness in its modelling of the real world. For example, if you open the back of the camera in
 daylight with a partially exposed film, it will ruin the film.
 
