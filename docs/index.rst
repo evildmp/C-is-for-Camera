@@ -9,6 +9,10 @@ object-oriented programming to simulate real-world objects.
 
 See :ref:`understanding-camera` for more about *how* the camera is simulated.
 
+.. image:: /images/QL17.jpg
+   :alt: 'Canonet G-III QL17'
+
+
 Contents
 --------
 
