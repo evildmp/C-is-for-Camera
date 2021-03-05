@@ -9,7 +9,11 @@ object-oriented programming to simulate real-world objects.
 
 See :ref:`understanding-camera` for more about *how* the camera is simulated.
 
-.. toctree::
+Contents
+--------
+
+..  toctree::
+    :maxdepth: 2
 
     get-started
     reference
