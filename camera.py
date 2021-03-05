@@ -55,13 +55,14 @@ class FilmAdvanceMechanism:
         if self.advanced:
             raise self.AlreadyAdvanced
 
-        else:
-            if self.camera and self.camera.film:
+        self.advanced = True
+
+        if self.camera:
+
+            if self.camera.film:
                 self.camera.film.advance()
 
-            self.advanced = True
-
-            if self.camera and self.camera.shutter:
+            if self.camera.shutter:
                 self.camera.shutter.cock()
 
     class AlreadyAdvanced(Exception):
@@ -73,10 +74,12 @@ class FilmRewindMechanism:
         self.camera = camera
 
     def rewind(self):
-        if self.camera.film:
-            self.camera.film.frame = 0
-            self.camera.film.fully_rewound = True
-            print("Rewinding film")
+        if not self.camera.film:
+            return
+
+        self.camera.film.frame = 0
+        self.camera.film.fully_rewound = True
+        print("Rewinding film")
 
 
 class Shutter:
@@ -92,6 +95,7 @@ class Shutter:
         # nothing at all happens.
         if not self.closed or not self.cocked:
             return
+
         print(f"Shutter openening for 1/{int(1/self.timer)} seconds")
         time.sleep(self.timer)
         self.closed = True
@@ -108,11 +112,10 @@ class Shutter:
         if self.cocked:
             raise self.AlreadyCocked
 
-        else:
-            print("Cocking shutter")
-            self.cocked = True
-            print("Cocked")
-            return "Cocked"
+        print("Cocking shutter")
+        self.cocked = True
+        print("Cocked")
+        return "Cocked"
 
     class AlreadyCocked(Exception):
         pass
@@ -139,25 +142,26 @@ class ExposureControlSystem:
         self.light_meter = LightMeter(camera=self.camera, battery=self.battery)
 
     def measured_ev(self):
-        if self.light_meter.reading():
-            return math.log(
-                (self.light_meter.reading() * self.film_speed/12.5),2
-            )
-        else:
+        if not self.light_meter.reading():
             return -math.inf
+
+        return math.log(
+            (self.light_meter.reading() * self.film_speed/12.5),2
+        )
+
 
     def act(self):
         if self.mode == "Manual":
-            pass
-        elif self.mode == "Shutter priority":
-            timer = self.camera.shutter.timer
-            target_aperture = math.pow(2, self.measured_ev()/2) * math.sqrt(timer)
-            print(target_aperture)
-            if target_aperture < 1.7:
-                aperture = 1.7
-            else:
-                aperture = target_aperture
-            self.camera.iris.aperture = aperture
+            return
+
+        timer = self.camera.shutter.timer
+        target_aperture = math.pow(2, self.measured_ev()/2) * math.sqrt(timer)
+        print(target_aperture)
+        if target_aperture < 1.7:
+            aperture = 1.7
+        else:
+            aperture = target_aperture
+        self.camera.iris.aperture = aperture
 
 
 class LightMeter:
@@ -168,20 +172,19 @@ class LightMeter:
         self.battery = battery
 
     def reading(self):
-        if self.battery:
+        if not self.battery:
+            return
 
-            # If the light meter has not been removed from the camera, we will take the
-            # measurement from the camera's environment - if the lens cap is not on.
-            if self.camera:
-                if self.camera.lens_cap.on:
-                    return 0
-                else:
-                    return self.camera.environment.scene_luminosity
+        # If the light meter has not been removed from the camera, we will take the
+        # measurement from the camera's environment - if the lens cap is not on.
+        if not self.camera:
+            # If the rest of the camera is not around, we can still measure incident light on the meter.
+            return self.incident_light
 
-            # If the rest of the camera is not around, we can still measure incident light on the
-            # meter.
-            else:
-                return self.incident_light
+        if self.camera.lens_cap.on:
+            return 0
+
+        return self.camera.environment.scene_luminosity
 
 
 class Back:
@@ -196,15 +199,20 @@ class Back:
             print("Closing back")
 
     def open(self):
-        if self.closed:
-            self.closed = False
-            print("Opening back")
-            self.camera.frame_counter = 0
-            if self.camera.film.frame > 0:
-                print("Resetting frame counter to 0")
-                if self.camera.environment.scene_luminosity > 0 and self.camera.film:
-                    self.camera.film.ruined = True
-                    return "Film is ruined"
+        if not self.closed:
+            return
+
+        self.closed = False
+        print("Opening back")
+        self.camera.frame_counter = 0
+
+        if self.camera.film.frame == 0:
+            return
+
+        print("Resetting frame counter to 0")
+        if self.camera.environment.scene_luminosity > 0 and self.camera.film:
+            self.camera.film.ruined = True
+            return "Film is ruined"
 
 
 class LensCap:
@@ -223,16 +231,19 @@ class Film:
         self.ruined = False
 
     def advance(self):
-        if not self.fully_rewound:
-            print(f"On frame {self.frame} (of {self.frames})")
-            print("Advancing film")
-            if self.frame < self.frames:
-                self.frame += 1
-                if self.camera and self.camera.back.closed == True:
-                    self.camera.frame_counter += 1
-                print(f"On frame {self.frame} (of {self.frames})")
-            else:
-                raise self.NoMoreFrames
+        if not self.frame < self.frames:
+            raise self.NoMoreFrames
+
+        if self.fully_rewound:
+            return
+
+        print(f"On frame {self.frame} (of {self.frames})")
+        print("Advancing film")
+
+        self.frame += 1
+        if self.camera and self.camera.back.closed == True:
+            self.camera.frame_counter += 1
+        print(f"On frame {self.frame} (of {self.frames})")
 
     class NoMoreFrames(Exception):
         pass
