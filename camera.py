@@ -129,10 +129,6 @@ class Iris:
 
 class ExposureControlSystem:
 
-    #     math.log(
-    #             (reading * self.film_speed/12.5),2
-    #         )
-
     def __init__(self, mode="Manual", film_speed=100, camera=None, battery=None):
         self.mode = mode
         self.film_speed = film_speed
@@ -145,9 +141,7 @@ class ExposureControlSystem:
         if not self.light_meter.reading():
             return -math.inf
 
-        return math.log(
-            (self.light_meter.reading() * self.film_speed/12.5),2
-        )
+        return math.log((self.light_meter.reading() * self.film_speed/12.5),2)
 
 
     def act(self):
@@ -216,7 +210,6 @@ class Back:
 
 
 class LensCap:
-    # The lens cap is on by default.
     def __init__(self, on=True):
         self.on = on
 
