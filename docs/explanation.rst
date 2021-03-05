@@ -1,12 +1,12 @@
 .. _explanation:
 
 Explanation
------------
+===========
 
 .. _understanding-camera:
 
 Understanding ``Camera``
-~~~~~~~~~~~~~~~~~~~~~~~~
+------------------------
 
 A camera is an instance of the ``Camera`` class. When a ``Camera`` is instantiated (``c = Camera()``), it's
 initialised along with a number of objects.
@@ -30,8 +30,27 @@ instantiated a camera, you can advance the film, then trip the shutter::
     'Tripped'
 
 
+.. _explanation-numbers:
+
+Representing a physical device in software
+-------------------------------------------
+
+Why does the ``Camera`` default to a shutter speed of 1/128s, which is not a speed you'll see indicated on any camera?
+
+A film camera from the 1970s doesn't have the same precision or accuracy as floating-point operations in software. In
+addition, cameras in any case use many nominal numbers in their controls, that only represent an approximation to some
+numerical ideal.
+
+The traditional scale of shutter timings for example - 1s, 1/2s, 1/4s, 1/8s, 1/15s, 1/30s, 1/60s, 1/120s, 1/250s -
+proceeds roughly in sequential powers of 2, but breaks down twice in just a few steps, in order to provide easier
+numbers to work with.
+
+If a shutter had a precise 1s speed and it followed the rule of 2 precisely, then it would have a 1/128s speed -
+which it does in software, even if no camera does in real life.
+
+
 Why?
-~~~~
+----
 
 I love film cameras and their mechanisms, and spend a lot of time repairing and servicing them. The mechanisms in a
 camera are full of functional logic, and thinking about how they change their own state and trigger changes in and
