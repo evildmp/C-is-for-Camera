@@ -1,5 +1,10 @@
 Get started
------------
+===========
+
+Installation
+------------
+
+You'll need Python 3.6 or later.
 
 Clone the repository::
 
@@ -8,6 +13,10 @@ Clone the repository::
 or::
 
     git clone git@github.com:evildmp/C-is-for-Camera.git
+
+
+Using the camera
+----------------
 
 In the ``C-is-for-Camera`` directory, start a Python 3 shell.
 
@@ -47,7 +56,6 @@ represented by Python classes)::
 
 The lens cap is off, so let's try to take a photo. First, advance the film::
 
-
     >>> c.film_advance_mechanism.advance()
     Cocking shutter
     Cocked
@@ -60,3 +68,29 @@ fire the shutter::
     Shutter closes
     Shutter opened for 1/128 seconds
     Shutter uncocked
+
+Doing physically impossible things - like advancing the mechanism twice without releasing it - will cause an exception,
+for example::
+
+    >>> c.film_advance_mechanism.advance()
+    On frame 1 (of 24)
+    Advancing film
+    On frame 2 (of 24)
+    Cocking shutter
+    Cocked
+    >>> c.film_advance_mechanism.advance()
+    Traceback (most recent call last):
+      File "<stdin>", line 1, in <module>
+      File "/Users/daniele/Repositories/camera/camera.py", line 56, in advance
+        raise self.AlreadyAdvanced
+    camera.AlreadyAdvanced
+
+You can also do things that you shouldn't do, like opening the back of the camera in daylight with a partially-exposed
+roll of film inside - which will spoil the film::
+
+    >>> c.back.open()
+    Opening back
+    Resetting frame counter to 0
+    'Film is ruined'
+
+See :ref:`reference` for a complete description of the camera's components and what you can do with them.
