@@ -14,7 +14,19 @@ In addition, things like a roll of film and the physical environment in which th
 instantiated, and available as attributes of the camera.
 
 Let's assume that we have created a camera with ``c = Camera()``. In that case, your camera will include a number of
-components that allow you to perform various actions, or can be in various states:
+components that allow you to perform various actions, or can be in various states.
+
+
+Attributes, properties and methods of ``Camera``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+* ``c.state()``: reports the state of the camera and its sub-systems
+* ``c.frame_counter``: how many frames the camera indicates have been exposed
+* ``c.shutter_speed`` (property): sets ``c.shutter.timer``; for example a nominal 1/30s speed will set the shutter
+  timer to 1/32s
+
+So far, other settings and controls need to be accessed through the the sub-systems - for example, to fire the shutter,
+you need to do ``c.shutter.trip()``, because a shutter button has not yet been implemented on ``Camera`` itself.
 
 
 Some things you can do
@@ -49,13 +61,12 @@ Some are of both kinds.
 * ``c.shutter.timer``: shutter speed
 * ``c.shutter.cocked``: ``True`` or ``False``
 * ``c.iris.aperture``
-* ``lens_cap.on``: ``True`` or ``False``
-* ``frame_counter``: how many frames the camera indicates have been exposed
-* ``film.frame``: which frame we're on
-* ``film.frames``: how many frames in the roll
-* ``film.fully_rewound``: ``True`` or ``False``
-* ``film.ruined``: ``True`` or ``False``
-* ``environment.scene_luminosity``: how bright it is
+* ``c.lens_cap.on``: ``True`` or ``False``
+* ``c.film.frame``: which frame we're on
+* ``c.film.frames``: how many frames in the roll
+* ``c.film.fully_rewound``: ``True`` or ``False``
+* ``c.film.ruined``: ``True`` or ``False``
+* ``c.environment.scene_luminosity``: how bright it is
 
 
 Exceptions

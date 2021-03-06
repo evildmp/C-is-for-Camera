@@ -11,6 +11,16 @@ class TestCamera(object):
         c.shutter.trip()
         assert c.frame_counter == 1
 
+    def test_selected_shutter_speeds_are_applied(self):
+        c = Camera()
+        c.shutter_speed = 1/500
+        assert c.shutter.timer == 1/512
+        c.shutter_speed = 1/15
+        assert c.shutter.timer == 1/16
+        c.shutter_speed = 1/120
+        assert c.shutter.timer == 1/128
+        with pytest.raises(c.NonExistentShutterSpeed):
+            c.shutter_speed = 1/10
 
 class TestShutter(object):
 

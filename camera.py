@@ -1,6 +1,9 @@
 import time, math
 
 class Camera:
+
+    nominal_speeds = {1/4:1/4, 1/8:1/8, 1/15:1/16, 1/30:1/32, 1/60:1/64, 1/120:1/128, 1/240:1/256, 1/500:1/512}
+
     def __init__(self):
         self.shutter = Shutter(camera=self)
         self.iris = Iris()
@@ -12,9 +15,31 @@ class Camera:
         self.film = Film(camera=self)
         self.environment = Environment()
         self.frame_counter = 0
+        self.shutter_speed = 1/120
+
+
+    @property
+    def shutter_speed(self):
+        return self._shutter_speed
+
+    @shutter_speed.setter
+    def shutter_speed(self, value):
+        if not value in self.nominal_speeds:
+            possible_settings = ", ".join([f"1/{int(1/s)}" for s in self.nominal_speeds.keys()])
+            raise self.NonExistentShutterSpeed(f"Possible shutter speeds are {possible_settings}")
+
+        self.shutter.timer = self.nominal_speeds[value]
+        self._shutter_speed = value
+
+    class NonExistentShutterSpeed(Exception):
+        pass
+
 
     def state(self):
         print("================== Camera state =================")
+        print()
+        print("------------------ Controls ---------------------")
+        print(f"Selected speed:            1/{int(1/self.shutter_speed)}")
         print()
         print("------------------ Mechanical -------------------")
         print(f"Back closed:               {self.back.closed}")
@@ -22,7 +47,7 @@ class Camera:
         print(f"Film advance mechanism:    {self.film_advance_mechanism.advanced}")
         print(f"Frame counter:             {self.frame_counter}")
         print(f"Shutter cocked:            {self.shutter.cocked}")
-        print(f"Shutter timer:             1/{1/self.shutter.timer} seconds")
+        print(f"Shutter timer:             1/{int(1/self.shutter.timer)} seconds")
         print(f"Iris aperture:             ƒ/{self.iris.aperture}")
         print(f"Camera exposure settings:  {math.log(math.pow(self.iris.aperture, 2)/self.shutter.timer, 2)} EV")
         print()

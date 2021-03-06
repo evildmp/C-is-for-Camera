@@ -69,8 +69,21 @@ fire the shutter::
     Shutter opened for 1/128 seconds
     Shutter uncocked
 
-Doing physically impossible things - like advancing the mechanism twice without releasing it - will cause an exception,
-for example::
+You can set the camera's speed::
+
+    >>> c.shutter_speed = 1/240
+
+\ - but only speeds available from the shutter speed selector ring can be set::
+
+    >>> c.shutter_speed = 1/33
+    Traceback (most recent call last):
+      File "<stdin>", line 1, in <module>
+      File "/Users/daniele/Repositories/camera/camera.py", line 29, in shutter_speed
+        raise self.NonExistentShutterSpeed(f"Possible shutter speeds are {possible_settings}")
+    camera.NonExistentShutterSpeed: Possible shutter speeds are 1/4, 1/8, 1/15, 1/30, 1/60, 1/120, 1/240, 1/500
+
+Doing other physically impossible things - like advancing the mechanism twice without releasing it - will cause an
+exception, for example::
 
     >>> c.film_advance_mechanism.advance()
     On frame 1 (of 24)
