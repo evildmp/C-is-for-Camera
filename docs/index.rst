@@ -12,6 +12,23 @@ See :ref:`understanding-camera` for more about *how* the camera is simulated.
 .. image:: /images/QL17.jpg
    :alt: 'Canonet G-III QL17'
 
+::
+
+    >>> from camera import Camera
+    >>> c = Camera()
+    >>> c.film_advance_mechanism.advance()
+    On frame 0 (of 24)
+    Advancing film
+    On frame 1 (of 24)
+    Cocking shutter
+    Cocked
+    >>> c.shutter.trip()
+    Shutter openening for 1/128 seconds
+    Shutter closes
+    Shutter uncocked
+    'Tripped'
+
+See :ref:`get-started` for more.
 
 Contents
 --------
