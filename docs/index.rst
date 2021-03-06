@@ -5,7 +5,8 @@ A 35mm camera, based on the `Canonet G-III QL17 <https://en.wikipedia.org/wiki/C
 simulated in Python.
 
 The purpose of this project is to explore and understand the logic in the mechanisms of a camera by using
-object-oriented programming to simulate real-world objects.
+object-oriented programming to represent real-world objects. It's also a way to appreciate the intricate mechanical
+logic embodied in a device like a camera.
 
 See :ref:`understanding-camera` for more about *how* the camera is simulated.
 
