@@ -1,3 +1,5 @@
+.. _get-started:
+
 Get started
 ===========
 
@@ -32,15 +34,18 @@ And find out what state it's in, using the ``state()`` method::
 ``state()`` reports on the state of the camera, which includes its various subsystems (which themselves are also
 represented by Python classes)::
 
-
     ================== Camera state =================
+
+    ------------------ Controls ---------------------
+    Selected speed:            1/120
 
     ------------------ Mechanical -------------------
     Back closed:               True
     Lens cap on:               False
     Film advance mechanism:    False
+    Frame counter:             0
     Shutter cocked:            False
-    Shutter timer:             1/128.0 seconds
+    Shutter timer:             1/128 seconds
     Iris aperture:             ƒ/16
     Camera exposure settings:  15.0 EV
 
@@ -50,6 +55,12 @@ represented by Python classes)::
     Mode:                       Shutter priority
     Battery:                    1.44 V
     Film speed:                 100 ISO
+
+    ------------------ Film -------------------------
+    Speed:                      100 ISO
+    Rewound into cartridge:     False
+    Exposed frames:             0 (of 24)
+    Ruined:                     False
 
     ------------------ Environment ------------------
     Scene luminosity:           4096 cd/m^2

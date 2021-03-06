@@ -39,13 +39,16 @@ See the camera's state::
     >>> c.state()
     ================== Camera state =================
 
+    ------------------ Controls ---------------------
+    Selected speed:            1/120
+
     ------------------ Mechanical -------------------
     Back closed:               True
     Lens cap on:               False
     Film advance mechanism:    False
     Frame counter:             0
     Shutter cocked:            False
-    Shutter timer:             1/128.0 seconds
+    Shutter timer:             1/128 seconds
     Iris aperture:             ƒ/16
     Camera exposure settings:  15.0 EV
 
@@ -59,7 +62,7 @@ See the camera's state::
     ------------------ Film -------------------------
     Speed:                      100 ISO
     Rewound into cartridge:     False
-    Exposed frames:             0 (of 24
+    Exposed frames:             0 (of 24)
     Ruined:                     False
 
     ------------------ Environment ------------------
