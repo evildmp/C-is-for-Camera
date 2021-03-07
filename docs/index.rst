@@ -39,13 +39,6 @@ Contents
     :maxdepth: 2
 
     get-started
+    how-to
     reference
     explanation
-
-
-How to run tests
-----------------
-
-Tests are in ``test_camera.py`` and require pytest.
-
-Install pytest, and run: ``pytest``.
