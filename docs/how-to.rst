@@ -31,3 +31,9 @@ Or to build and serve it, with automatic refresh on changes::
     make run
 
 The documentation is served at http://127.0.0.1:8080
+
+To check spelling, run::
+
+    make spelling
+
+Any correctly spelled but unrecognised words should be added to ``docs/spelling_wordlist.txt``.
