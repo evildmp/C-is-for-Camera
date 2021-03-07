@@ -2,7 +2,7 @@ c is for Camera
 ===============
 
 A 35mm camera, based on the `Canonet G-III QL17 <https://en.wikipedia.org/wiki/Canonet_G-III_QL17>`_ rangefinder,
-simulated in Python.
+represented in Python.
 
 The purpose of this project is to explore and understand the logic in the mechanisms of a camera by using
 object-oriented programming to represent real-world objects. It's also a way to appreciate the intricate mechanical
@@ -31,6 +31,7 @@ See :ref:`understanding-camera` for more about *how* the camera is simulated.
 
 See :ref:`get-started` for more.
 
+
 Contents
 --------
 
@@ -48,4 +49,3 @@ How to run tests
 Tests are in ``test_camera.py`` and require pytest.
 
 Install pytest, and run: ``pytest``.
-

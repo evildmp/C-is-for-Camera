@@ -69,6 +69,8 @@ Some are of both kinds.
 * ``c.environment.scene_luminosity``: how bright it is
 
 
+.. _exceptions:
+
 Exceptions
 ----------
 

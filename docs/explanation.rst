@@ -35,7 +35,7 @@ instantiated a camera, you can advance the film, then trip the shutter::
 Representing a physical device in software
 -------------------------------------------
 
-Why does the ``Camera`` default to a shutter speed of 1/128s, which is not a speed you'll see indicated on any camera?
+Why does the ``Shutter`` default to a shutter speed of 1/128s, which is not a speed you'll see indicated on any camera?
 
 A film camera from the 1970s doesn't have the same precision or accuracy as floating-point operations in software. In
 addition, cameras in any case use many nominal numbers in their controls, that only represent an approximation to some
@@ -47,6 +47,15 @@ numbers to work with.
 
 If a shutter had a precise 1s speed and it followed the rule of 2 precisely, then it would have a 1/128s speed -
 which it does in software, even if no camera does in real life.
+
+However, the real-life QL17 has shutter speed selector ring that that ``Camera`` also represents. When you apply
+a shutter speed::
+
+   c.shutter_speed = 1/120
+
+two things happen. First, it checks whether the selected speed is one of those that the camera actually has, and raises
+a :ref:`Camera.NonExistentShutterSpeed <exceptions>` exception if not. If it's a legitimate selection, it applies an
+actual shutter speed to the shutter.
 
 
 Why?
