@@ -17,7 +17,7 @@ class TestCamera(object):
         assert c.shutter.timer == 1/512
         c.shutter_speed = 1/15
         assert c.shutter.timer == 1/16
-        c.shutter_speed = 1/120
+        c.shutter_speed = 1/125
         assert c.shutter.timer == 1/128
         with pytest.raises(c.NonExistentShutterSpeed):
             c.shutter_speed = 1/10
@@ -126,7 +126,6 @@ class TestLightMeter(object):
         assert c.exposure_control_system.light_meter.reading() == 4096
 
 
-
 class TestExposureControlSystem(object):
 
     def test_measured_ev(self):
@@ -163,24 +162,46 @@ class TestExposureControlSystem(object):
         c.lens_cap.on = True
         assert c.exposure_control_system.measured_ev() == -math.inf
 
-    def test_shutter_priority(self):
+    def test_theoretical_aperture(self):
         c = Camera()
-        assert c.shutter.timer == 1/128
-        c.exposure_control_system.act()
-        assert c.iris.aperture == math.pow(2, c.exposure_control_system.measured_ev()/2) * math.sqrt(1/128)
+        c.environment.scene_luminosity = 16
+        assert pytest.approx(c.exposure_control_system.theoretical_aperture()) == 1
+        c.environment.scene_luminosity = 1024
+        assert pytest.approx(c.exposure_control_system.theoretical_aperture()) == 8
+        c.environment.scene_luminosity = 4096
+        assert pytest.approx(c.exposure_control_system.theoretical_aperture()) == 16
+        c.environment.scene_luminosity = 16384
+        assert pytest.approx(c.exposure_control_system.theoretical_aperture()) == 32
 
-    def test_shutter_priority_more_light(self):
+    def test_shutter_priority_less_light(self):
         c = Camera()
-        c.environment.scene_luminosity = 8192
-        c.exposure_control_system.act()
-        assert c.iris.aperture == math.pow(2, c.exposure_control_system.measured_ev()/2) * math.sqrt(1/128)
+        c.environment.scene_luminosity = 1456
+        c.exposure_control_system.meter()
+        assert c.exposure_control_system.meter() == c.iris.aperture == c.exposure_control_system.theoretical_aperture()
+        c.environment.scene_luminosity = 3565
+        assert c.exposure_control_system.meter() == c.iris.aperture == c.exposure_control_system.theoretical_aperture()
 
-    def test_shutter_priority_very_low_light(self):
+    def test_shutter_priority_not_enough_light(self):
         c = Camera()
         c.environment.scene_luminosity = 32
-        c.exposure_control_system.act()
-        assert c.iris.aperture == 1.7
+        assert c.exposure_control_system.meter() == c.iris.aperture == 1.7
 
+    def test_shutter_priority_too_much_light(self):
+        c = Camera()
+        c.environment.scene_luminosity = 16384
+        assert c.exposure_control_system.meter() == c.iris.aperture == 16
+
+    def test_manual_mode(self):
+        c = Camera()
+        c.exposure_control_system.mode = "Manual"
+        assert c.exposure_control_system.meter() is None
+        assert c.iris.aperture == 16
+
+    def test_exposure_meter(self):
+        c = Camera()
+        for sl in range(0, 17000, 1000):
+            print(sl)
+            assert  c.exposure_indicator() == c.exposure_control_system.meter()
 
 class TestFilm(object):
 

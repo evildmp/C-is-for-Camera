@@ -2,20 +2,21 @@ import time, math
 
 class Camera:
 
-    nominal_speeds = {1/4:1/4, 1/8:1/8, 1/15:1/16, 1/30:1/32, 1/60:1/64, 1/120:1/128, 1/240:1/256, 1/500:1/512}
+    nominal_speeds = {1/4:1/4, 1/8:1/8, 1/15:1/16, 1/30:1/32, 1/60:1/64, 1/125:1/128, 1/250:1/256, 1/500:1/512}
 
     def __init__(self):
         self.shutter = Shutter(camera=self)
         self.iris = Iris()
         self.back = Back(camera=self)
         self.exposure_control_system = ExposureControlSystem(mode="Shutter priority", camera=self, battery=1.44)
+        self.exposure_indicator = self.exposure_control_system.meter
         self.film_advance_mechanism = FilmAdvanceMechanism(camera=self)
         self.film_rewind_mechanism = FilmRewindMechanism(camera=self)
         self.lens_cap = LensCap(on=False)
         self.film = Film(camera=self)
         self.environment = Environment()
         self.frame_counter = 0
-        self.shutter_speed = 1/120
+        self.shutter_speed = 1/125
 
 
     @property
@@ -33,6 +34,9 @@ class Camera:
 
     class NonExistentShutterSpeed(Exception):
         pass
+
+
+
 
 
     def state(self):
@@ -168,19 +172,22 @@ class ExposureControlSystem:
 
         return math.log((self.light_meter.reading() * self.film_speed/12.5),2)
 
+    def theoretical_aperture(self):
+        return math.pow(2, self.measured_ev()/2) * math.sqrt(self.camera.shutter.timer)
 
-    def act(self):
+    def meter(self):
         if self.mode == "Manual":
             return
 
-        timer = self.camera.shutter.timer
-        target_aperture = math.pow(2, self.measured_ev()/2) * math.sqrt(timer)
-        print(target_aperture)
-        if target_aperture < 1.7:
+        if self.theoretical_aperture() < 1.7:
             aperture = 1.7
+        elif self.theoretical_aperture() > 16:
+            aperture = 16
         else:
-            aperture = target_aperture
+            aperture = self.theoretical_aperture()
         self.camera.iris.aperture = aperture
+
+        return aperture
 
 
 class LightMeter:

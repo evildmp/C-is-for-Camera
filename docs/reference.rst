@@ -35,7 +35,7 @@ Some things you can do
 * ``c.film_advance_mechanism.advance()``: advance the film inside the camera and cock the shutter
 * ``c.film_rewind_mechanism.rewind()``: wind the film back into the cartridge
 * ``c.shutter.trip()``: release the shutter (i.e. actually take a photo)
-* ``c.exposure_control_system.act()``: depending on various things including its own mode, the ambient light, whether
+* ``c.exposure_control_system.meter()``: depending on various things including its own mode, the ambient light, whether
   the lens cap is on, the film speed, the shutter speed, etc, will set the iris aperture
 * ``c.exposure_control_system.light_meter.reading()``: takes a reading of the ambient light
 * ``c.back.open()`` and ``c.back.close()``: open and close the back - beware of opening the back in daylight with a
