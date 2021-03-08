@@ -2,21 +2,30 @@ import time, math
 
 class Camera:
 
-    nominal_speeds = {1/4:1/4, 1/8:1/8, 1/15:1/16, 1/30:1/32, 1/60:1/64, 1/125:1/128, 1/250:1/256, 1/500:1/512}
+    selectable_shutter_speeds = {
+        1/4:1/4, 1/8:1/8, 1/15:1/16, 1/30:1/32, 1/60:1/64, 1/125:1/128, 1/250:1/256, 1/500:1/512
+    }
+    selectable_film_speeds = (25, 50, 100, 200, 400, 800)
 
     def __init__(self):
+        # set up sub-systems
         self.shutter = Shutter(camera=self)
         self.iris = Iris()
         self.back = Back(camera=self)
-        self.exposure_control_system = ExposureControlSystem(mode="Shutter priority", camera=self, battery=1.44)
-        self.exposure_indicator = self.exposure_control_system.meter
+        self.exposure_control_system = ExposureControlSystem(
+            mode="Shutter priority", camera=self, film_speed=100, battery=1.44
+        )
         self.film_advance_mechanism = FilmAdvanceMechanism(camera=self)
         self.film_rewind_mechanism = FilmRewindMechanism(camera=self)
         self.lens_cap = LensCap(on=False)
         self.film = Film(camera=self)
         self.environment = Environment()
+
+        # set up camera controls and indicators
         self.frame_counter = 0
+        self.film_speed = 100
         self.shutter_speed = 1/125
+        self.exposure_indicator = self.exposure_control_system.meter
 
 
     @property
@@ -25,31 +34,49 @@ class Camera:
 
     @shutter_speed.setter
     def shutter_speed(self, value):
-        if not value in self.nominal_speeds:
-            possible_settings = ", ".join([f"1/{int(1/s)}" for s in self.nominal_speeds.keys()])
+        if not value in self.selectable_shutter_speeds:
+            possible_settings = ", ".join([f"1/{int(1/s)}" for s in self.selectable_shutter_speeds.keys()])
             raise self.NonExistentShutterSpeed(f"Possible shutter speeds are {possible_settings}")
 
-        self.shutter.timer = self.nominal_speeds[value]
+        self.shutter.timer = self.selectable_shutter_speeds[value]
         self._shutter_speed = value
 
     class NonExistentShutterSpeed(Exception):
         pass
 
 
+    @property
+    def film_speed(self):
+        return self._film_speed
 
+    @film_speed.setter
+    def film_speed(self, value):
+        if not value in self.selectable_film_speeds:
+            possible_settings = ", ".join([f"{s}" for s in self.selectable_film_speeds])
+            raise self.NonExistentFilmSpeed(f"Possible film speeds are {possible_settings}")
+
+        self._film_speed = value
+
+    class NonExistentFilmSpeed(Exception):
+        pass
 
 
     def state(self):
         print("================== Camera state =================")
         print()
         print("------------------ Controls ---------------------")
+        print(f"Film speed:                {self.film_speed} ISO")
         print(f"Selected speed:            1/{int(1/self.shutter_speed)}")
         print()
+        print("------------------ indicators -------------------")
+        print(f"Exposure_indicator:        ƒ/{self.exposure_indicator()}")
+        print(f"Frame counter:             {self.frame_counter}")
+        print()
+
         print("------------------ Mechanical -------------------")
         print(f"Back closed:               {self.back.closed}")
         print(f"Lens cap on:               {self.lens_cap.on}")
         print(f"Film advance mechanism:    {self.film_advance_mechanism.advanced}")
-        print(f"Frame counter:             {self.frame_counter}")
         print(f"Shutter cocked:            {self.shutter.cocked}")
         print(f"Shutter timer:             1/{int(1/self.shutter.timer)} seconds")
         print(f"Iris aperture:             ƒ/{self.iris.aperture}")

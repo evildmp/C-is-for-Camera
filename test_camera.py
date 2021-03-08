@@ -22,8 +22,15 @@ class TestCamera(object):
         with pytest.raises(c.NonExistentShutterSpeed):
             c.shutter_speed = 1/10
 
-class TestShutter(object):
+    def test_selected_film_speeds_are_applied(self):
+        c = Camera()
+        c.film_speed = 400
+        assert c.film_speed == 400
+        with pytest.raises(c.NonExistentFilmSpeed):
+            c.film_speed = 130
 
+
+class TestShutter(object):
 
     def test_trip_when_uncocked(self):
         shutter = Shutter()
@@ -68,6 +75,7 @@ class TestFilmAdvanceMechanism(object):
         c.shutter.trip()
         with pytest.raises(Film.NoMoreFrames):
             c.film_advance_mechanism.advance()
+
 
 class TestFilmRewindMechanism(object):
 
@@ -203,6 +211,7 @@ class TestExposureControlSystem(object):
             print(sl)
             assert  c.exposure_indicator() == c.exposure_control_system.meter()
 
+
 class TestFilm(object):
 
     def test_no_more_film(self):
@@ -210,6 +219,7 @@ class TestFilm(object):
         f.advance()
         with pytest.raises(Film.NoMoreFrames):
             f.advance()
+
 
 class TestBack(object):
 
@@ -240,4 +250,3 @@ class TestBack(object):
         c.film_rewind_mechanism.rewind()
         assert c.back.open() != "Film is ruined"
         assert c.film.ruined == False
-
