@@ -29,6 +29,18 @@ class TestCamera(object):
         with pytest.raises(c.NonExistentFilmSpeed):
             c.film_speed = 130
 
+    def test_selected_aperture_settings_are_applied(self):
+        c = Camera()
+        c.aperture = 2
+        assert c.iris.aperture == 2
+        with pytest.raises(c.ApertureOutOfRange):
+            c.aperture = 1.2
+        with pytest.raises(c.ApertureOutOfRange):
+            c.aperture = 22
+        c.environment.scene_luminosity = 1024
+        c.aperture = "A"
+        assert pytest.approx(c.iris.aperture, 8)
+
 
 class TestShutter(object):
 

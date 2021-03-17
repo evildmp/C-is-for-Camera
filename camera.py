@@ -46,6 +46,28 @@ class Camera:
 
 
     @property
+    def aperture(self):
+        return self._aperture
+
+    @aperture.setter
+    def aperture(self, value):
+        if value == "A":
+            self.exposure_control_system.mode = "Shutter priority"
+            self.exposure_control_system.meter()
+
+        elif not 1.7 <= value <= 16:
+            raise self.ApertureOutOfRange
+
+        else:
+            self.iris.aperture = value
+
+        self._aperture = value
+
+    class ApertureOutOfRange(Exception):
+        pass
+
+
+    @property
     def film_speed(self):
         return self._film_speed
 
