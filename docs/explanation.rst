@@ -55,11 +55,35 @@ a shutter speed::
 
 two things happen. First, it checks whether the selected speed is one of those that the camera actually has, and raises
 a :ref:`Camera.NonExistentShutterSpeed <exceptions>` exception if not. If it's a legitimate selection, it applies an
-actual shutter speed to the shutter.
+*actual* shutter speed to the shutter (see the next section).
 
 
-Why?
-----
+How changing a camera setting changes other settings
+----------------------------------------------------
+
+As noted, when you apply value to ``c.shutter_speed``, it also applies it to ``c.shutter.timer``.
+
+It does this with a ``shutter_speed()`` method of ``Camera``, decorated to function as the *setter* for the attribute.
+
+..  code-block:: python
+
+    @shutter_speed.setter
+    def shutter_speed(self, value):
+        if not value in self.selectable_shutter_speeds:
+            possible_settings = ", ".join([f"1/{int(1/s)}" for s in self.selectable_shutter_speeds.keys()])
+            raise self.NonExistentShutterSpeed(f"Possible shutter speeds are {possible_settings}")
+
+        self.shutter.timer = self.selectable_shutter_speeds[value]
+        self._shutter_speed = value
+
+Similarly, you can set ``c.aperture`` - but the setting will only be accepted if it's one that's actually available,
+and if not, you'll get an ``ApertureOutOfRange`` exception.
+
+Only valid values will then be applied to the subsystems.
+
+
+Why build a 40-year-old camera in Python?
+-----------------------------------------
 
 I love film cameras and their mechanisms, and spend a lot of time repairing and servicing them. The mechanisms in a
 camera are full of functional logic, and thinking about how they change their own state and trigger changes in and
