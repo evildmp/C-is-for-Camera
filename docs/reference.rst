@@ -81,7 +81,12 @@ like selecting a shutter speed that this particular camera doesn't have.
 
 Exceptions should be fairly self-explanatory:
 
-* ``Camera.NonExistentShutterSpeed``
+* ``Camera``
+
+  * ``NonExistentShutterSpeed``
+  * ``ApertureOutOfRange``
+  * ``NonExistentFilmSpeed``
+
 * ``FilmAdvanceMechanism.AlreadyAdvanced``
 * ``Shutter.AlreadyCocked``
 * ``Film.NoMoreFrames``
