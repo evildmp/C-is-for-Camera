@@ -1,6 +1,6 @@
 import pytest, math
 
-from camera import Camera, Shutter, FilmAdvanceMechanism, LightMeter, ExposureControlSystem, Film
+from camera import Camera, ShutterButton, FilmAdvanceLever, Shutter, FilmAdvanceMechanism, LightMeter, ExposureControlSystem, Film
 
 
 class TestCamera(object):
@@ -29,17 +29,79 @@ class TestCamera(object):
         with pytest.raises(c.NonExistentFilmSpeed):
             c.film_speed = 130
 
-    def test_selected_aperture_settings_are_applied(self):
+    def test_selected_aperture_settings_are_applied_when_shutter_is_cocked(self):
         c = Camera()
+        c.shutter.cocked = True
+        c.aperture = 8
+        assert c.iris.aperture == 8
         c.aperture = 2
         assert c.iris.aperture == 2
+        c.aperture = 16
+        assert c.iris.aperture == 16
+
+    def test_only_decreasing_aperture_settings_are_applied_when_shutter_is_uncocked(self):
+        c = Camera()
+        c.shutter.cocked = False
+        c.aperture = 8
+        c.iris.aperture = 8
+        assert c.iris.aperture == 8
+        c.aperture = 2
+        assert c.iris.aperture == 8
+        c.aperture = 16
+        assert c.iris.aperture == 16
+
+    def test_aperture_setting_is_applied_as_soon_as_shutter_is_cocked(self):
+        c = Camera()
+        c.shutter.cocked = False
+        c.aperture = 8
+        c.iris.aperture = 16
+        assert c.iris.aperture == 16
+        c.shutter.cock()
+        assert c.iris.aperture == 8
+
+    def test_invalid_aperture_settings_are_rejected(self):
+        c = Camera()
         with pytest.raises(c.ApertureOutOfRange):
             c.aperture = 1.2
         with pytest.raises(c.ApertureOutOfRange):
             c.aperture = 22
+
+    def test_ae_mode_aperture_settings_are_applied(self):
+        c = Camera()
         c.environment.scene_luminosity = 1024
         c.aperture = "A"
         assert pytest.approx(c.iris.aperture, 8)
+
+
+class TestShutterButton(object):
+
+    def test_button_not_in_camera_cannot_be_pressed(self):
+        sb = ShutterButton()
+        with pytest.raises(ShutterButton.CannotBePressed):
+            sb.press()
+
+    def test_button_trips_shutter(self):
+        c = Camera()
+        c.film_advance_lever.wind()
+        c.shutter_button.press()
+        assert c.shutter.cocked == False
+        assert c.film_advance_mechanism.advanced == False
+
+
+class TestFilmAdvanceLever(object):
+
+    def test_lever_not_on_camera_cannot_be_pressed(self):
+        l = FilmAdvanceLever()
+        with pytest.raises(FilmAdvanceLever.CannotBeWound):
+            l.wind()
+
+    def test_lever_advances_mechanism(self):
+        c = Camera()
+        assert c.shutter.cocked == False
+        assert c.film_advance_mechanism.advanced == False
+        c.film_advance_lever.wind()
+        assert c.shutter.cocked == True
+        assert c.film_advance_mechanism.advanced == True
 
 
 class TestShutter(object):
@@ -262,3 +324,4 @@ class TestBack(object):
         c.film_rewind_mechanism.rewind()
         assert c.back.open() != "Film is ruined"
         assert c.film.ruined == False
+

@@ -10,7 +10,7 @@ class Camera:
     def __init__(self):
         # set up sub-systems
         self.shutter = Shutter(camera=self)
-        self.iris = Iris()
+        self.iris = Iris(camera=self)
         self.back = Back(camera=self)
         self.exposure_control_system = ExposureControlSystem(
             mode="Shutter priority", camera=self, film_speed=100, battery=1.44
@@ -21,12 +21,18 @@ class Camera:
         self.film = Film(camera=self)
         self.environment = Environment()
 
-        # set up camera controls and indicators
+        # set up camera settings and indicators
         self.frame_counter = 0
         self.film_speed = 100
         self.shutter_speed = 1/125
         self.exposure_indicator = self.exposure_control_system.meter
 
+        self.shutter_button = ShutterButton(camera=self)
+        self.film_advance_lever = FilmAdvanceLever(camera=self)
+        self.aperture = "A"
+
+
+    # ----------- Camera settings -----------
 
     @property
     def shutter_speed(self):
@@ -59,9 +65,10 @@ class Camera:
             raise self.ApertureOutOfRange
 
         else:
-            self.iris.aperture = value
+            self.iris.set_aperture(value)
 
         self._aperture = value
+
 
     class ApertureOutOfRange(Exception):
         pass
@@ -82,6 +89,8 @@ class Camera:
     class NonExistentFilmSpeed(Exception):
         pass
 
+
+    # ----------- Reporting -----------
 
     def state(self):
         print("================== Camera state =================")
@@ -123,6 +132,39 @@ class Camera:
         print("------------------ Environment ------------------")
         print(f"Scene luminosity:           {self.environment.scene_luminosity} cd/m^2")
 
+# ----------- Controls -----------
+
+class ShutterButton(object):
+
+    def __init__(self, camera=None):
+        self.camera = camera
+
+    def press(self):
+        if not self.camera:
+            raise self.CannotBePressed
+
+        self.camera.shutter.trip()
+
+    class CannotBePressed(Exception):
+        pass
+
+
+class FilmAdvanceLever(object):
+
+    def __init__(self, camera=None):
+        self.camera = camera
+
+    def wind(self):
+        if not self.camera:
+            raise self.CannotBeWound
+
+        self.camera.film_advance_mechanism.advance()
+
+    class CannotBeWound(Exception):
+        pass
+
+
+# ----------- Subsystems -----------
 
 class FilmAdvanceMechanism:
     def __init__(self, camera=None):
@@ -174,7 +216,7 @@ class Shutter:
         if not self.closed or not self.cocked:
             return
 
-        print(f"Shutter openening for 1/{int(1/self.timer)} seconds")
+        print(f"Shutter opening for 1/{int(1/self.timer)} seconds")
         time.sleep(self.timer)
         self.closed = True
         print("Shutter closes")
@@ -192,6 +234,12 @@ class Shutter:
 
         print("Cocking shutter")
         self.cocked = True
+
+        # cocking the shutter causes the aperture value to be applied to the iris
+        if self.camera:
+            print("Applying aperture value to iris")
+            self.camera.iris.set_aperture(self.camera.aperture)
+
         print("Cocked")
         return "Cocked"
 
@@ -201,8 +249,20 @@ class Shutter:
 
 class Iris:
 
-    def __init__(self, aperture=16):
+    def __init__(self, camera=None, aperture=16):
+        self.camera = camera
         self.aperture = aperture
+
+    def set_aperture(self, value):
+
+        # when the shutter is cocked, the iris follows the aperture setting
+        if self.camera.shutter.cocked:
+            self.aperture = value
+
+        # when the shutter is uncocked, the iris only closes in response to aperture setting changes
+        elif value > self.aperture:
+            self.aperture = value
+
 
 
 class ExposureControlSystem:
@@ -290,6 +350,8 @@ class Back:
             return "Film is ruined"
 
 
+# ----------- Other objects -----------
+
 class LensCap:
     def __init__(self, on=True):
         self.on = on
@@ -326,3 +388,5 @@ class Film:
 class Environment:
     def __init__(self, scene_luminosity=4096):
         self.scene_luminosity = scene_luminosity
+
+
