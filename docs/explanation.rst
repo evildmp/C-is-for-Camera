@@ -30,6 +30,58 @@ instantiated a camera, you can advance the film, then trip the shutter::
     'Tripped'
 
 
+Modelled behaviour
+------------------
+
+* Settings
+
+  * You can only select valid film, shutter and aperture settings.
+  * Although you select :ref:`nominal shutter speeds <explanation-numbers>`, actual values apply.
+
+* Film advance mechanism
+
+  * Winding the film advance lever advances the film and frame counter and cocks the shutter.
+  * You can't wind the lever multiple times without releasing the shutter.
+  * You can't wind the film past the last frame.
+  * You can rewind the film.
+
+* Back
+
+  * You can open and close the back of the camera.
+  * If you open the back, the frame counter resets.
+  * If you open the back in light when there is film in the camera, you will ruin the film, unless you have already
+    rewound it.
+
+* Exposure and metering system
+
+  * In A (auto-exposure shutter-priority mode) the exposure system responds accurately to ambient light.
+  * In A mode, aperture is determined by the available light.
+  * The exposure indicator shows the auto-exposure aperture.
+  * The metering system only works when there is a battery installed.
+  * You can't get a meter reading with the lens cap on.
+
+* Iris control
+
+  * The actual iris aperture responds to the aperture control in both directions when the shutter is cocked. When the
+    shutter is uncocked, it can only decrease the aperture.
+  * As soon as the shutter is cocked, the aperture setting is applied to the iris.
+
+
+Behaviour still to be implemented (incomplete list)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+* The Canonet QL allows you to advance the film multiple times without releasing the shutter when first loading film.
+* A low battery should affect the light meter.
+* The button should admit of a half-press.
+* The exposure indicator should not show a value in manual mode.
+* The self-timer.
+* The self-test batter lamp.
+* Intermediate film speeds need to be selectable.
+* In A mode, you should not be able to release the shutter if the exposure is not within bounds.
+* Only exposed frames should be spoiled by opening the back at the wrong time.
+* If you drop the camera, it might damage it.
+
+
 .. _explanation-numbers:
 
 Representing a physical device in software
