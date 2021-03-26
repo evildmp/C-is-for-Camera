@@ -41,13 +41,17 @@ See the camera's state::
     ================== Camera state =================
 
     ------------------ Controls ---------------------
-    Selected speed:            1/120
+    Film speed:                100 ISO
+    Selected speed:            1/125
+
+    ------------------ indicators -------------------
+    Exposure_indicator:        ƒ/16
+    Frame counter:             0
 
     ------------------ Mechanical -------------------
     Back closed:               True
     Lens cap on:               False
     Film advance mechanism:    False
-    Frame counter:             0
     Shutter cocked:            False
     Shutter timer:             1/128 seconds
     Iris aperture:             ƒ/16
@@ -71,7 +75,7 @@ See the camera's state::
 
 Advance the film::
 
-    >>> c.film_advance_mechanism.advance()
+    >>> c.film_advance_lever.wind()
     On frame 0 (of 24)
     Advancing film
     On frame 1 (of 24)
@@ -80,24 +84,25 @@ Advance the film::
 
 Release the shutter::
 
-    >>> c.shutter.trip()
-    Shutter openening for 1/128 seconds
+    >>> c.shutter_button.press()
+    Shutter opening for 1/128 seconds
     Shutter closes
     Shutter uncocked
-    'Tripped'
 
 It's not possible to advance the mechanism twice without releasing the shutter::
 
-    >>> c.film_advance_mechanism.advance()
+    >>> c.film_advance_lever.wind()
     On frame 1 (of 24)
     Advancing film
     On frame 2 (of 24)
     Cocking shutter
     Cocked
-    >>> c.film_advance_mechanism.advance()
+    >>> c.film_advance_lever.wind()
     Traceback (most recent call last):
       File "<stdin>", line 1, in <module>
-      File "/Users/daniele/Repositories/camera/camera.py", line 56, in advance
+      File "/Users/daniele/Repositories/camera/camera.py", line 159, in wind
+        self.camera.film_advance_mechanism.advance()
+      File "/Users/daniele/Repositories/camera/camera.py", line 174, in advance
         raise self.AlreadyAdvanced
     camera.AlreadyAdvanced
 

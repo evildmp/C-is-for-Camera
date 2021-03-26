@@ -37,13 +37,17 @@ represented by Python classes)::
     ================== Camera state =================
 
     ------------------ Controls ---------------------
-    Selected speed:            1/120
+    Film speed:                100 ISO
+    Selected speed:            1/125
+
+    ------------------ indicators -------------------
+    Exposure_indicator:        ƒ/16
+    Frame counter:             0
 
     ------------------ Mechanical -------------------
     Back closed:               True
     Lens cap on:               False
     Film advance mechanism:    False
-    Frame counter:             0
     Shutter cocked:            False
     Shutter timer:             1/128 seconds
     Iris aperture:             ƒ/16
@@ -64,48 +68,53 @@ represented by Python classes)::
 
     ------------------ Environment ------------------
     Scene luminosity:           4096 cd/m^2
+    
 
 The lens cap is off, so let's try to take a photo. First, advance the film::
 
-    >>> c.film_advance_mechanism.advance()
+    >>> c.film_advance_lever.wind()
+    On frame 0 (of 24)
+    Advancing film
+    On frame 1 (of 24)
     Cocking shutter
     Cocked
 
-As you can see, advancing the film also cocks the shutter. You can check ``c.state()`` again. So now we can actually
-fire the shutter::
+As you can see, moving the lever advances the film, which also cocks the shutter. You can check ``c.state()`` again. So
+now we can actually fire the shutter, by pressing the shutter release button::
 
-    >>> c.shutter.trip()
-    Shutter opens
+    >>> c.shutter_button.press()
+    Shutter opening for 1/128 seconds
     Shutter closes
-    Shutter opened for 1/128 seconds
     Shutter uncocked
 
 You can set the camera's speed::
 
-    >>> c.shutter_speed = 1/240
+    >>> c.shutter_speed = 1/250
 
 \ - but only speeds available from the shutter speed selector ring can be set::
 
     >>> c.shutter_speed = 1/33
     Traceback (most recent call last):
       File "<stdin>", line 1, in <module>
-      File "/Users/daniele/Repositories/camera/camera.py", line 29, in shutter_speed
+      File "/Users/daniele/Repositories/camera/camera.py", line 44, in shutter_speed
         raise self.NonExistentShutterSpeed(f"Possible shutter speeds are {possible_settings}")
-    camera.NonExistentShutterSpeed: Possible shutter speeds are 1/4, 1/8, 1/15, 1/30, 1/60, 1/120, 1/240, 1/500
+    camera.NonExistentShutterSpeed: Possible shutter speeds are 1/4, 1/8, 1/15, 1/30, 1/60, 1/125, 1/250, 1/500
 
-Doing other physically impossible things - like advancing the mechanism twice without releasing it - will cause an
+Doing other physically impossible things - like trying to wind the lever twice without taking a shot - will cause an
 exception, for example::
 
-    >>> c.film_advance_mechanism.advance()
+    >>> c.film_advance_lever.wind()
     On frame 1 (of 24)
     Advancing film
     On frame 2 (of 24)
     Cocking shutter
     Cocked
-    >>> c.film_advance_mechanism.advance()
+    >>> c.film_advance_lever.wind()
     Traceback (most recent call last):
       File "<stdin>", line 1, in <module>
-      File "/Users/daniele/Repositories/camera/camera.py", line 56, in advance
+      File "/Users/daniele/Repositories/camera/camera.py", line 159, in wind
+        self.camera.film_advance_mechanism.advance()
+      File "/Users/daniele/Repositories/camera/camera.py", line 174, in advance
         raise self.AlreadyAdvanced
     camera.AlreadyAdvanced
 
