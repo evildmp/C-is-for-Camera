@@ -68,6 +68,8 @@ represented by Python classes)::
 
     ------------------ Environment ------------------
     Scene luminosity:           4096 cd/m^2
+    ---------
+    Scene luminosity:           4096 cd/m^2
     
 
 The lens cap is off, so let's try to take a photo. First, advance the film::

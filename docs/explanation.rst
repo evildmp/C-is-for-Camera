@@ -21,10 +21,28 @@ other. For example in this camera, advancing the film also cocks the shutter.
 Actions that you'd perform with a physical camera are methods of the Python objects. For example, once you have
 instantiated a camera, you can advance the film, then trip the shutter::
 
-    >>> c = Camera()
-    >>> c.film_advance_mechanism.advance()
-    >>> c.shutter.trip()
-    Shutter openening for 1/128 seconds
+    >>> c.film_advance_lever.wind()
+    On frame 0 (of 24)
+    Advancing film
+    On frame 1 (of 24)
+    Cocking shutter
+    Applying aperture value to iris
+    Cocked
+    >>> c.shutter_button.press()
+    Shutter opening for 1/128 seconds
+    Shutter closes
+    Shutter uncocked
+
+You can also interact with the mechanisms at a lower level::
+
+    >>> from camera import ExposureControlSystem
+    >>> ecs = ExposureControlSystem()
+    >>> ecs.shutter.cock()
+    Cocking shutter
+    Cocked
+    'Cocked'
+    >>> ecs.shutter.trip()
+    Shutter opening for 1/128 seconds
     Shutter closes
     Shutter uncocked
     'Tripped'
@@ -56,7 +74,9 @@ Modelled behaviour
 
   * In A (auto-exposure shutter-priority mode) the exposure system responds accurately to ambient light.
   * In A mode, aperture is determined by the available light.
+  * In A mode, you can't take a photo unless the exposure is in range.
   * The exposure indicator shows the auto-exposure aperture.
+  * The exposure indicator reports "Under" and "Over" appropriately.
   * The metering system only works when there is a battery installed.
   * You can't get a meter reading with the lens cap on.
 
@@ -65,6 +85,10 @@ Modelled behaviour
   * The actual iris aperture responds to the aperture control in both directions when the shutter is cocked. When the
     shutter is uncocked, it can only decrease the aperture.
   * As soon as the shutter is cocked, the aperture setting is applied to the iris.
+
+As well as external behaviour, internal mechanisms and objects that the user will never see are also modelled. In
+particular, :ref:`the complex interactions within the exposure control system <explanation-exposure-control-system>`
+are modelled in some detail.
 
 
 Behaviour still to be implemented (incomplete list)
@@ -75,9 +99,8 @@ Behaviour still to be implemented (incomplete list)
 * The button should admit of a half-press.
 * The exposure indicator should not show a value in manual mode.
 * The self-timer.
-* The self-test batter lamp.
+* The self-test battery lamp.
 * Intermediate film speeds need to be selectable.
-* In A mode, you should not be able to release the shutter if the exposure is not within bounds.
 * Only exposed frames should be spoiled by opening the back at the wrong time.
 * If you drop the camera, it might damage it.
 
@@ -113,7 +136,7 @@ a :ref:`Camera.NonExistentShutterSpeed <exceptions>` exception if not. If it's a
 How changing a camera setting changes other settings
 ----------------------------------------------------
 
-As noted, when you apply value to ``c.shutter_speed``, it also applies it to ``c.shutter.timer``.
+As noted, when you apply value to ``c.shutter_speed``, it also applies it to ``c.exposure_control_system.shutter.timer``.
 
 It does this with a ``shutter_speed()`` method of ``Camera``, decorated to function as the *setter* for the attribute.
 
@@ -125,13 +148,70 @@ It does this with a ``shutter_speed()`` method of ``Camera``, decorated to funct
             possible_settings = ", ".join([f"1/{int(1/s)}" for s in self.selectable_shutter_speeds.keys()])
             raise self.NonExistentShutterSpeed(f"Possible shutter speeds are {possible_settings}")
 
-        self.shutter.timer = self.selectable_shutter_speeds[value]
+        self.exposure_control_system.shutter.timer = self.selectable_shutter_speeds[value]
         self._shutter_speed = value
 
 Similarly, you can set ``c.aperture`` - but the setting will only be accepted if it's one that's actually available,
 and if not, you'll get an ``ApertureOutOfRange`` exception.
 
 Only valid values will then be applied to the subsystems.
+
+
+.. _explanation-exposure-control-system:
+
+Understanding the exposure control system
+------------------------------------------
+
+The most logically complex part of the camera is the exposure control system - ``ExposureControlSystem``.
+
+When the shutter release button is depressed, it moves the shutter release lever (part n. 19-0562,
+``ShutterReleaseLever``). As it travels down, it rotates the exposure level lever (``ExposureLevelLever.activate()``).
+
+The exposure bounds lever (``ExposureBoundsLever``) is held against the exposure level lever by a spring. The movement
+of the exposure level lever allows (``ExposureBoundsLever.activate()``) the exposure bounds lever to follow it.
+
+In turn, the shutter lock lever (``ShutterLockLever``, part n. 19-0566) is held against the exposure bounds lever by a
+spring, and the movement of the exposure bounds lever allows (``ShutterLockLever.activate()``) the shutter lock lever
+to follow it.
+
+If the shutter lock lever is allowed to swing across far enough, it will prevent the shutter release lever from moving
+far enough to trigger the shutter release.
+
+Two things can prevent the exposure bounds lever from moving far enough to allow the shutter lock lever to do this.
+
+* *The camera is in manual mode*: if a shutter speed is manually selected (i.e. the exposure system is in manual mode)
+  then the EE lever (``EELever``, part n. Y13-5302) is locked into place. This prevents the exposure bounds lever and
+  in turn the shutter lock lever from blocking the shutter release lever.
+
+* *The camera is in aperture-priority mode and the exposure is within range*: if aperture-priority mode is selected,
+  the needle of the light meter can also prevent the exposure bounds lever from moving far enough. The needle's
+  opposite end is turned up through 90˚, and the exposure bounds lever is shaped so that if the needle is not in the
+  range ƒ/1.7 to ƒ/16, the lever will move right the way across. However if the needle is within the range, the lever
+  will be prevented from swinging across further (and also clamps the needle in place). This too prevents the shutter
+  lock lever from blocking the shutter release lever.
+
+If the camera is in aperture-priority mode and the exposure is within range, the exposure level lever moves across as
+the shutter release button is depressed, until it also hits the turned-up end of the light meter needle. Depending on
+the position of the needle, the the exposure level lever moves the EE lever to a certain position - and this determines
+the aperture of the iris.
+
+Actuating the iris
+~~~~~~~~~~~~~~~~~~
+
+The leaves of the iris only actually move under the following conditions:
+
+* manual mode, when:
+
+  * shutter is cocked, any movement of the aperture ring adjusts iris
+  * shutter is uncocked, iris can only be contracted by moving the aperture ring
+  * cocking the shutter, the iris is immediately adjusted to the selected aperture
+
+* aperture-priority mode, when:
+
+  * shutter is cocked, depressing the shutter release lever adjusts the iris to the auto-exposure aperture (if in range)
+  * shutter is uncocked, depressing the shutter release lever only adjusts the iris to a smaller auto-exposure aperture
+    (if in range)
+  * cocking the shutter, the iris is immediately adjusted to the widest possible aperture
 
 
 Why build a 40-year-old camera in Python?

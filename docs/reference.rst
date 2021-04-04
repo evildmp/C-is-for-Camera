@@ -55,7 +55,7 @@ The sub-systems can be accessed **directly**. For example, you can do things lik
 
     >>> from camera import Camera
     >>> c = Camera()
-    >>> c.shutter.cock()
+    >>> c.exposure_control_system.shutter.cock()
     Cocking shutter
     Applying aperture value to iris
     Cocked
@@ -82,7 +82,7 @@ Assuming ``c = Camera()``:
 
 * ``c.film_advance_mechanism.advance()``: advance the film inside the camera and cock the shutter
 * ``c.film_rewind_mechanism.rewind()``: wind the film back into the cartridge
-* ``c.shutter.trip()``: release the shutter (i.e. actually take a photo)
+* ``c.exposure_control_system.shutter.trip()``: release the shutter (i.e. actually take a photo)
 * ``c.exposure_control_system.meter()``: depending on various things including its own mode, the ambient light, whether
   the lens cap is on, the film speed, the shutter speed, etc, will set the iris aperture
 * ``c.exposure_control_system.light_meter.reading()``: takes a reading of the ambient light
@@ -96,8 +96,8 @@ while others only make sense as reports from the system (such as whether the fil
 Some are of both kinds.
 
 * ``c.film_advance_mechanism.advanced``: ``True`` or ``False``
-* ``c.shutter.timer``: shutter speed
-* ``c.shutter.cocked``: ``True`` or ``False``
+* ``c.exposure_control_system.shutter.timer``: shutter speed
+* ``c.exposure_control_system.shutter.cocked``: ``True`` or ``False``
 * ``c.iris.aperture``
 * ``c.lens_cap.on``: ``True`` or ``False``
 * ``c.film.frame``: which frame we're on

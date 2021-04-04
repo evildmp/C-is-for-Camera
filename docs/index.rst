@@ -8,7 +8,11 @@ The purpose of this project is to explore and understand the logic in the mechan
 object-oriented programming to represent real-world objects. It's also a way to appreciate the intricate mechanical
 logic embodied in a device like a camera.
 
-See :ref:`understanding-camera` for more about *how* the camera is simulated.
+The level of modelling so far varies - in the exposure control system, the mechanism is modelled down to the level 
+of individual levers and their interactions. In fact some of the modelling goes down to the level of parts that are not
+even detailed separately in Canon's repair manual.
+
+See :ref:`understanding-camera` for more about *how* the camera is modelled.
 
 .. image:: /images/QL17.jpg
    :alt: 'Canonet G-III QL17'
@@ -17,17 +21,18 @@ See :ref:`understanding-camera` for more about *how* the camera is simulated.
 
     >>> from camera import Camera
     >>> c = Camera()
-    >>> c.film_advance_mechanism.advance()
+    >>> c.film_advance_lever.wind()
     On frame 0 (of 24)
     Advancing film
     On frame 1 (of 24)
     Cocking shutter
+    Applying aperture value to iris
     Cocked
-    >>> c.shutter.trip()
-    Shutter openening for 1/128 seconds
+    >>> c.shutter_button.press()
+    Shutter opening for 1/128 seconds
     Shutter closes
     Shutter uncocked
-    'Tripped'
+    
 
 See :ref:`get-started` for more.
 
