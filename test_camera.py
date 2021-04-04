@@ -1,6 +1,9 @@
 import pytest, math
 
-from camera import Camera, ShutterButton, FilmAdvanceLever, Shutter, FilmAdvanceMechanism, LightMeter, ExposureControlSystem, Film
+from camera import (
+    Camera, ShutterButton, FilmAdvanceLever, Shutter, FilmAdvanceMechanism, LightMeter, ExposureControlSystem,
+    ShutterReleaseLever, ExposureLevelLever, ExposureBoundsLever, EELever, Film
+    )
 
 
 class TestCamera(object):
@@ -8,17 +11,17 @@ class TestCamera(object):
     def test_film_advance_increments_counter(self):
         c = Camera()
         c.film_advance_mechanism.advance()
-        c.shutter.trip()
+        c.exposure_control_system.shutter.trip()
         assert c.frame_counter == 1
 
     def test_selected_shutter_speeds_are_applied(self):
         c = Camera()
         c.shutter_speed = 1/500
-        assert c.shutter.timer == 1/512
+        assert c.exposure_control_system.shutter.timer == 1/512
         c.shutter_speed = 1/15
-        assert c.shutter.timer == 1/16
+        assert c.exposure_control_system.shutter.timer == 1/16
         c.shutter_speed = 1/125
-        assert c.shutter.timer == 1/128
+        assert c.exposure_control_system.shutter.timer == 1/128
         with pytest.raises(c.NonExistentShutterSpeed):
             c.shutter_speed = 1/10
 
@@ -31,7 +34,7 @@ class TestCamera(object):
 
     def test_selected_aperture_settings_are_applied_when_shutter_is_cocked(self):
         c = Camera()
-        c.shutter.cocked = True
+        c.exposure_control_system.shutter.cocked = True
         c.aperture = 8
         assert c.iris.aperture == 8
         c.aperture = 2
@@ -41,7 +44,7 @@ class TestCamera(object):
 
     def test_only_decreasing_aperture_settings_are_applied_when_shutter_is_uncocked(self):
         c = Camera()
-        c.shutter.cocked = False
+        c.exposure_control_system.shutter.cocked = False
         c.aperture = 8
         c.iris.aperture = 8
         assert c.iris.aperture == 8
@@ -52,11 +55,11 @@ class TestCamera(object):
 
     def test_aperture_setting_is_applied_as_soon_as_shutter_is_cocked(self):
         c = Camera()
-        c.shutter.cocked = False
+        c.exposure_control_system.shutter.cocked = False
         c.aperture = 8
         c.iris.aperture = 16
         assert c.iris.aperture == 16
-        c.shutter.cock()
+        c.exposure_control_system.shutter.cock()
         assert c.iris.aperture == 8
 
     def test_invalid_aperture_settings_are_rejected(self):
@@ -84,7 +87,7 @@ class TestShutterButton(object):
         c = Camera()
         c.film_advance_lever.wind()
         c.shutter_button.press()
-        assert c.shutter.cocked == False
+        assert c.exposure_control_system.shutter.cocked == False
         assert c.film_advance_mechanism.advanced == False
 
 
@@ -97,10 +100,10 @@ class TestFilmAdvanceLever(object):
 
     def test_lever_advances_mechanism(self):
         c = Camera()
-        assert c.shutter.cocked == False
+        assert c.exposure_control_system.shutter.cocked == False
         assert c.film_advance_mechanism.advanced == False
         c.film_advance_lever.wind()
-        assert c.shutter.cocked == True
+        assert c.exposure_control_system.shutter.cocked == True
         assert c.film_advance_mechanism.advanced == True
 
 
@@ -146,7 +149,7 @@ class TestFilmAdvanceMechanism(object):
         c = Camera()
         c.film = Film(frames=1)
         c.film_advance_mechanism.advance()
-        c.shutter.trip()
+        c.exposure_control_system.shutter.trip()
         with pytest.raises(Film.NoMoreFrames):
             c.film_advance_mechanism.advance()
 
@@ -167,14 +170,14 @@ class TestFilmAdvanceMechanismShutterInterlock(object):
         # advancing film cocks shutter
         c = Camera()
         c.film_advance_mechanism.advance()
-        assert c.shutter.cocked == True
+        assert c.exposure_control_system.shutter.cocked == True
 
         # after the film has been advanced, it can't be advanced again
         with pytest.raises(FilmAdvanceMechanism.AlreadyAdvanced):
             c.film_advance_mechanism.advance()
 
         # after tripping the shutter, it can be advanced
-        assert c.shutter.trip() == "Tripped"
+        assert c.exposure_control_system.shutter.trip() == "Tripped"
         c.film_advance_mechanism.advance()
         assert c.film_advance_mechanism.advanced == True
 
@@ -259,19 +262,19 @@ class TestExposureControlSystem(object):
         c = Camera()
         c.environment.scene_luminosity = 1456
         c.exposure_control_system.meter()
-        assert c.exposure_control_system.meter() == c.iris.aperture == c.exposure_control_system.theoretical_aperture()
+        assert c.exposure_control_system.meter() == c.exposure_control_system.theoretical_aperture()
         c.environment.scene_luminosity = 3565
-        assert c.exposure_control_system.meter() == c.iris.aperture == c.exposure_control_system.theoretical_aperture()
+        assert c.exposure_control_system.meter() == c.exposure_control_system.theoretical_aperture()
 
     def test_shutter_priority_not_enough_light(self):
         c = Camera()
         c.environment.scene_luminosity = 32
-        assert c.exposure_control_system.meter() == c.iris.aperture == 1.7
+        assert c.exposure_control_system.meter() == "Under"
 
     def test_shutter_priority_too_much_light(self):
         c = Camera()
         c.environment.scene_luminosity = 16384
-        assert c.exposure_control_system.meter() == c.iris.aperture == 16
+        assert c.exposure_control_system.meter() == "Over"
 
     def test_manual_mode(self):
         c = Camera()
@@ -282,8 +285,139 @@ class TestExposureControlSystem(object):
     def test_exposure_meter(self):
         c = Camera()
         for sl in range(0, 17000, 1000):
-            print(sl)
             assert  c.exposure_indicator() == c.exposure_control_system.meter()
+
+
+class TestShutterReleaseLever(object):
+
+    def test_nothing_happens_when_there_is_no_exposure_control_system(self):
+        srl = ShutterReleaseLever()
+        assert srl.depress() == None
+
+    def test_depress_lever_in_manual_mode_is_not_blocked(self):
+        ecs = ExposureControlSystem()
+        ecs.mode = "Manual"
+        ecs.shutter.cock()
+        ecs.shutter_release_lever.depress()
+        assert ecs.shutter.cocked == False
+
+    def test_depress_lever_in_AE_mode_is_blocked(self):
+        ecs = ExposureControlSystem()
+        assert ecs.mode == "Shutter priority"
+        assert ecs.meter() == None
+        ecs.shutter.cock()
+        ecs.shutter_release_lever.depress()
+        assert ecs.shutter.cocked == True
+
+    def test_depress_lever_in_bright_light(self):
+        c = Camera()
+        ecs = c.exposure_control_system
+        assert ecs.meter() == 16
+        assert ecs.mode == "Shutter priority"
+        ecs.shutter.cock()
+        ecs.shutter_release_lever.depress()
+        assert ecs.shutter.cocked == False
+
+    def test_depress_lever_in_too_bright_light(self):
+        c = Camera()
+        c.environment.scene_luminosity = 8096
+        ecs = c.exposure_control_system
+        assert ecs.meter() == "Over"
+        assert ecs.mode == "Shutter priority"
+        ecs.shutter.cock()
+        ecs.shutter_release_lever.depress()
+        assert ecs.shutter.cocked == True
+
+    def test_depress_lever_in_dim_light(self):
+        c = Camera()
+        c.environment.scene_luminosity = 256
+        ecs = c.exposure_control_system
+        assert pytest.approx(ecs.meter(), 4)
+        assert ecs.mode == "Shutter priority"
+        ecs.shutter.cock()
+        ecs.shutter_release_lever.depress()
+        assert ecs.shutter.cocked == False
+
+    def test_depress_lever_in_too_dim_light(self):
+        c = Camera()
+        c.environment.scene_luminosity = 32
+        ecs = c.exposure_control_system
+        assert ecs.meter() == "Under"
+        assert ecs.mode == "Shutter priority"
+        ecs.shutter.cock()
+        ecs.shutter_release_lever.depress()
+        assert ecs.shutter.cocked == True
+
+
+class TestExposureLevelLever(object):
+
+    def test_nothing_happens_when_there_is_no_exposure_control_system(self):
+        ell = ExposureLevelLever()
+        assert ell.activate() is None
+
+    def test_can_be_activated_in_manual_mode_because_it_is_not_blocked(self):
+        ecs = ExposureControlSystem()
+        ecs.mode = "Manual"
+        assert ecs.exposure_level_lever.activate() == "Activated EE lever"
+
+    def test_cannot_be_activated_in_AE_mode_because_it_is_blocked(self):
+        ecs = ExposureControlSystem()
+        assert ecs.mode == "Shutter priority"
+        assert ecs.meter() == None
+        assert ecs.exposure_level_lever.activate() == "Blocked"
+
+
+class TestExposureBoundsLever(object):
+
+    def test_nothing_happens_when_there_is_no_exposure_control_system(self):
+        ebl = ExposureBoundsLever()
+        assert ebl.activate() is None
+
+    def test_cannot_be_activated_in_manual_mode_because_it_is_blocked(self):
+        ecs = ExposureControlSystem()
+        ecs.mode = "Manual"
+        assert ecs.exposure_bounds_lever.activate() == "Blocked"
+
+    def test_can_be_activated_in_AE_mode_because_it_is_not_blocked(self):
+        ecs = ExposureControlSystem()
+        assert ecs.mode == "Shutter priority"
+        assert ecs.meter() == None
+        assert ecs.exposure_bounds_lever.activate() == "Activated shutter lock lever"
+
+
+class TestEELever(object):
+
+    def test_nothing_happens_when_there_is_no_exposure_control_system(self):
+        eel = EELever()
+        assert eel.locked() == None
+
+    def test_locked_in_manual_mode_and_not_locked_in_AE_mode(self):
+        ecs = ExposureControlSystem(mode="Manual")
+        assert ecs.ee_lever.locked() == True
+        ecs.mode = "Shutter priority"
+        assert ecs.ee_lever.locked() == False
+
+    def test_eelever_(self):
+        c = Camera()
+        ecs = c.exposure_control_system
+        assert ecs.mode == "Shutter priority"
+        assert pytest.approx(ecs.ee_lever.activate(16), 16)
+
+
+class TestShutterLockLever(object):
+
+    def test_nothing_happens_when_there_is_no_exposure_control_system(self):
+        ecs = ExposureControlSystem()
+        assert ecs.shutter_lock_lever.activate() == None
+        assert ecs.shutter_lock_lever.deactivate() == None
+
+
+    def test_activation_locks(self):
+        ecs = ExposureControlSystem()
+        ecs.shutter_lock_lever.activate()
+        assert ecs.shutter_lock_lever.blocks == True
+        ecs.shutter_lock_lever.deactivate()
+        assert ecs.shutter_lock_lever.blocks == False
 
 
 class TestFilm(object):

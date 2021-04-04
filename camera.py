@@ -9,17 +9,20 @@ class Camera:
 
     def __init__(self):
         # set up sub-systems
-        self.shutter = Shutter(camera=self)
         self.iris = Iris(camera=self)
         self.back = Back(camera=self)
         self.exposure_control_system = ExposureControlSystem(
             mode="Shutter priority", camera=self, film_speed=100, battery=1.44
         )
+
+        # sub-systems that belong to other modules of the camera, but we want them as direct attributes for convenience
+        # self.shutter = self.exposure_control_system.shutter
+
         self.film_advance_mechanism = FilmAdvanceMechanism(camera=self)
         self.film_rewind_mechanism = FilmRewindMechanism(camera=self)
         self.lens_cap = LensCap(on=False)
         self.film = Film(camera=self)
-        self.environment = Environment()
+        self.environment = Environment(scene_luminosity=4096)
 
         # set up camera settings and indicators
         self.frame_counter = 0
@@ -44,7 +47,7 @@ class Camera:
             possible_settings = ", ".join([f"1/{int(1/s)}" for s in self.selectable_shutter_speeds.keys()])
             raise self.NonExistentShutterSpeed(f"Possible shutter speeds are {possible_settings}")
 
-        self.shutter.timer = self.selectable_shutter_speeds[value]
+        self.exposure_control_system.shutter.timer = self.selectable_shutter_speeds[value]
         self._shutter_speed = value
 
     class NonExistentShutterSpeed(Exception):
@@ -108,10 +111,10 @@ class Camera:
         print(f"Back closed:               {self.back.closed}")
         print(f"Lens cap on:               {self.lens_cap.on}")
         print(f"Film advance mechanism:    {self.film_advance_mechanism.advanced}")
-        print(f"Shutter cocked:            {self.shutter.cocked}")
-        print(f"Shutter timer:             1/{int(1/self.shutter.timer)} seconds")
+        print(f"Shutter cocked:            {self.exposure_control_system.shutter.cocked}")
+        print(f"Shutter timer:             1/{int(1/self.exposure_control_system.shutter.timer)} seconds")
         print(f"Iris aperture:             ƒ/{self.iris.aperture}")
-        print(f"Camera exposure settings:  {math.log(math.pow(self.iris.aperture, 2)/self.shutter.timer, 2)} EV")
+        print(f"Camera exposure settings:  {math.log(math.pow(self.iris.aperture, 2)/self.exposure_control_system.shutter.timer, 2)} EV")
         print()
 
         print("------------------ Metering ---------------------")
@@ -143,7 +146,7 @@ class ShutterButton(object):
         if not self.camera:
             raise self.CannotBePressed
 
-        self.camera.shutter.trip()
+        self.camera.exposure_control_system.shutter_release_lever.depress()
 
     class CannotBePressed(Exception):
         pass
@@ -182,8 +185,8 @@ class FilmAdvanceMechanism:
             if self.camera.film:
                 self.camera.film.advance()
 
-            if self.camera.shutter:
-                self.camera.shutter.cock()
+            if self.camera.exposure_control_system.shutter:
+                self.camera.exposure_control_system.shutter.cock()
 
     class AlreadyAdvanced(Exception):
         pass
@@ -256,7 +259,7 @@ class Iris:
     def set_aperture(self, value):
 
         # when the shutter is cocked, the iris follows the aperture setting
-        if self.camera.shutter.cocked:
+        if self.camera.exposure_control_system.shutter.cocked:
             self.aperture = value
 
         # when the shutter is uncocked, the iris only closes in response to aperture setting changes
@@ -267,36 +270,168 @@ class Iris:
 
 class ExposureControlSystem:
 
-    def __init__(self, mode="Manual", film_speed=100, camera=None, battery=None):
+    def __init__(self, mode="Shutter priority", film_speed=100, camera=None, battery=None):
         self.mode = mode
         self.film_speed = film_speed
         self.camera = camera
         self.battery = battery
 
         self.light_meter = LightMeter(camera=self.camera, battery=self.battery)
+        self.shutter = Shutter(camera=self.camera)
 
+        self.shutter_release_lever = ShutterReleaseLever(exposure_control_system=self)
+        self.shutter_lock_lever = ShutterLockLever(exposure_control_system=self)
+        self.ee_lever = EELever(exposure_control_system=self)
+        self.exposure_level_lever = ExposureLevelLever(exposure_control_system=self)
+        self.exposure_bounds_lever = ExposureBoundsLever(exposure_control_system=self)
+
+    # measured_ev is the exposure value from the system (that the aperture will need to
+    # respond to) and is determined by the light reading and the film-speed.
     def measured_ev(self):
-        if not self.light_meter.reading():
+        if self.light_meter.reading() is None:
+            return None
+        elif self.light_meter.reading() == 0:
             return -math.inf
 
         return math.log((self.light_meter.reading() * self.film_speed/12.5),2)
 
+    # the aperture that the system needs to set in order to match the measure_ev
     def theoretical_aperture(self):
-        return math.pow(2, self.measured_ev()/2) * math.sqrt(self.camera.shutter.timer)
-
-    def meter(self):
-        if self.mode == "Manual":
+        if self.measured_ev() is None:
             return
 
-        if self.theoretical_aperture() < 1.7:
-            aperture = 1.7
-        elif self.theoretical_aperture() > 16:
-            aperture = 16
-        else:
-            aperture = self.theoretical_aperture()
-        self.camera.iris.aperture = aperture
+        return math.pow(2, self.measured_ev()/2) * math.sqrt(self.shutter.timer)
 
-        return aperture
+    # what the meter needle actually shows (but only if the camera is actually metering)
+    def meter(self):
+        if self.mode == "Manual" or self.theoretical_aperture() is None:
+            return
+
+        theoretical_aperture = self.theoretical_aperture()
+
+        if theoretical_aperture < 1.7 and math.isclose(theoretical_aperture, 1.7):
+            return 1.7
+        elif theoretical_aperture > 16 and math.isclose(theoretical_aperture, 16):
+           return 16
+        elif theoretical_aperture < 1.7:
+            return "Under"
+        elif theoretical_aperture > 16:
+            return "Over"
+        else:
+            return theoretical_aperture
+
+
+class ShutterReleaseLever:
+    # part number 19-0562
+
+    def __init__(self, exposure_control_system=None):
+        self.exposure_control_system = exposure_control_system
+
+    def depress(self):
+
+        if not self.exposure_control_system:
+            return
+
+        self.exposure_control_system.exposure_level_lever.activate()
+
+        if not self.exposure_control_system.shutter_lock_lever.blocks:
+            self.exposure_control_system.shutter.trip()
+
+        self.exposure_control_system.exposure_level_lever.deactivate()
+
+
+class ExposureLevelLever:
+
+    def __init__(self, exposure_control_system=None):
+        self.exposure_control_system = exposure_control_system
+
+    def activate(self):
+        if not self.exposure_control_system:
+            return
+
+        self.exposure_control_system.exposure_bounds_lever.activate()
+
+        if not self.exposure_control_system.shutter_lock_lever.blocks:
+            meter_value = self.exposure_control_system.meter()
+            self.exposure_control_system.ee_lever.activate(meter_value)
+            return "Activated EE lever"
+
+        else:
+            return "Blocked"
+
+    def deactivate(self):
+        if not self.exposure_control_system:
+            return
+
+        self.exposure_control_system.ee_lever.deactivate()
+
+
+class ExposureBoundsLever:
+
+    def __init__(self, exposure_control_system=None):
+        self.exposure_control_system = exposure_control_system
+
+    def activate(self):
+        if not self.exposure_control_system:
+            return
+        elif self.exposure_control_system.ee_lever.locked():
+            return "Blocked"
+
+        meter_value = self.exposure_control_system.meter()
+
+        if meter_value is None or meter_value == "Under" or meter_value == "Over":
+            self.exposure_control_system.shutter_lock_lever.activate()
+            return "Activated shutter lock lever"
+
+    def deactivate(self):
+        if not self.exposure_control_system:
+            return
+
+        self.exposure_control_system.shutter_lock_lever.activate()
+
+
+class ShutterLockLever:
+    def __init__(self, exposure_control_system=None):
+        self.exposure_control_system = exposure_control_system
+        self.blocks = False
+
+    def activate(self):
+        if not self.exposure_control_system:
+            return
+
+        self.blocks = True
+
+    def deactivate(self):
+        if not self.exposure_control_system:
+            return
+
+        self.blocks = False
+
+
+class EELever:
+    def __init__(self, exposure_control_system=None):
+        self.exposure_control_system = exposure_control_system
+
+        if exposure_control_system:
+            self.position = 0  # 0 is rotated fully anti-clockwise; 1 is rotated fully clockwise
+
+    def activate(self, aperture_value):
+        if self.locked:
+            return "Locked"
+
+        self.exposure_control_system.iris.set_aperture(aperture_value)
+
+        return aperture_value
+
+    def deactivate(self):
+        if not self.exposure_control_system:
+            return
+
+    def locked(self):
+        if not self.exposure_control_system:
+            return
+
+        return self.exposure_control_system.mode == "Manual"
 
 
 class LightMeter:
@@ -388,5 +523,3 @@ class Film:
 class Environment:
     def __init__(self, scene_luminosity=4096):
         self.scene_luminosity = scene_luminosity
-
-
