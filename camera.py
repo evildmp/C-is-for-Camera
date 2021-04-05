@@ -9,7 +9,6 @@ class Camera:
 
     def __init__(self):
         # set up sub-systems
-        self.iris = Iris(camera=self)
         self.back = Back(camera=self)
         self.exposure_control_system = ExposureControlSystem(
             mode="Shutter priority", camera=self, film_speed=100, battery=1.44
@@ -62,13 +61,12 @@ class Camera:
     def aperture(self, value):
         if value == "A":
             self.exposure_control_system.mode = "Shutter priority"
-            self.exposure_control_system.meter()
 
         elif not 1.7 <= value <= 16:
             raise self.ApertureOutOfRange
 
         else:
-            self.iris.set_aperture(value)
+            self.exposure_control_system.iris.set_aperture(value)
 
         self._aperture = value
 
@@ -113,8 +111,8 @@ class Camera:
         print(f"Film advance mechanism:    {self.film_advance_mechanism.advanced}")
         print(f"Shutter cocked:            {self.exposure_control_system.shutter.cocked}")
         print(f"Shutter timer:             1/{int(1/self.exposure_control_system.shutter.timer)} seconds")
-        print(f"Iris aperture:             ƒ/{self.iris.aperture}")
-        print(f"Camera exposure settings:  {math.log(math.pow(self.iris.aperture, 2)/self.exposure_control_system.shutter.timer, 2)} EV")
+        print(f"Iris aperture:             ƒ/{self.exposure_control_system.iris.aperture}")
+        print(f"Camera exposure settings:  {self.exposure_control_system.exposure_value()} EV")
         print()
 
         print("------------------ Metering ---------------------")
@@ -205,69 +203,6 @@ class FilmRewindMechanism:
         print("Rewinding film")
 
 
-class Shutter:
-    # The shutter is closed by default.
-    def __init__(self, camera=None, timer=1/128, closed=True, cocked=False):
-        self.camera = camera
-        self.timer = timer
-        self.closed = closed
-        self.cocked = cocked
-
-    def trip(self):
-        # The shutter may only be tripped if it's already cocked - otherwise,
-        # nothing at all happens.
-        if not self.closed or not self.cocked:
-            return
-
-        print(f"Shutter opening for 1/{int(1/self.timer)} seconds")
-        time.sleep(self.timer)
-        self.closed = True
-        print("Shutter closes")
-        self.cocked = False
-        print("Shutter uncocked")
-
-        if self.camera:
-            self.camera.film_advance_mechanism.advanced = False
-
-        return "Tripped"
-
-    def cock(self):
-        if self.cocked:
-            raise self.AlreadyCocked
-
-        print("Cocking shutter")
-        self.cocked = True
-
-        # cocking the shutter causes the aperture value to be applied to the iris
-        if self.camera:
-            print("Applying aperture value to iris")
-            self.camera.iris.set_aperture(self.camera.aperture)
-
-        print("Cocked")
-        return "Cocked"
-
-    class AlreadyCocked(Exception):
-        pass
-
-
-class Iris:
-
-    def __init__(self, camera=None, aperture=16):
-        self.camera = camera
-        self.aperture = aperture
-
-    def set_aperture(self, value):
-
-        # when the shutter is cocked, the iris follows the aperture setting
-        if self.camera.exposure_control_system.shutter.cocked:
-            self.aperture = value
-
-        # when the shutter is uncocked, the iris only closes in response to aperture setting changes
-        elif value > self.aperture:
-            self.aperture = value
-
-
-
 class ExposureControlSystem:
 
     def __init__(self, mode="Shutter priority", film_speed=100, camera=None, battery=None):
@@ -276,8 +211,9 @@ class ExposureControlSystem:
         self.camera = camera
         self.battery = battery
 
-        self.light_meter = LightMeter(camera=self.camera, battery=self.battery)
-        self.shutter = Shutter(camera=self.camera)
+        self.light_meter = LightMeter(exposure_control_system=self, battery=self.battery)
+        self.shutter = Shutter(exposure_control_system=self)
+        self.iris = Iris(exposure_control_system=self)
 
         self.shutter_release_lever = ShutterReleaseLever(exposure_control_system=self)
         self.shutter_lock_lever = ShutterLockLever(exposure_control_system=self)
@@ -320,6 +256,57 @@ class ExposureControlSystem:
         else:
             return theoretical_aperture
 
+    def exposure_value(self):
+        # returns the EV of the exposure system
+        if self.mode == "Manual":
+            return math.log(math.pow(self.iris.aperture, 2)/self.shutter.timer, 2)
+        else:
+            return "Shutter priority"
+
+class Shutter:
+    # The shutter is closed by default.
+    def __init__(self, exposure_control_system=None, timer=1/128, closed=True, cocked=False):
+        self.exposure_control_system = exposure_control_system
+        self.timer = timer
+        self.closed = closed
+        self.cocked = cocked
+
+    def trip(self):
+        # The shutter may only be tripped if it's already cocked - otherwise,
+        # nothing at all happens.
+        if not self.closed or not self.cocked:
+            return
+
+        print(f"Shutter opening for 1/{int(1/self.timer)} seconds")
+        time.sleep(self.timer)
+        self.closed = True
+        print("Shutter closes")
+        self.cocked = False
+        print("Shutter uncocked")
+
+        if self.exposure_control_system and self.exposure_control_system.camera:
+            self.exposure_control_system.camera.film_advance_mechanism.advanced = False
+
+        return "Tripped"
+
+    def cock(self):
+        if self.cocked:
+            raise self.AlreadyCocked
+
+        print("Cocking shutter")
+        self.cocked = True
+
+        # cocking the shutter causes the aperture value to be applied to the iris
+        if self.exposure_control_system and self.exposure_control_system.camera:
+            print("Applying aperture value to iris")
+            self.exposure_control_system.iris.set_aperture(self.exposure_control_system.camera.aperture)
+
+        print("Cocked")
+        return "Cocked"
+
+    class AlreadyCocked(Exception):
+        pass
+
 
 class ShutterReleaseLever:
     # part number 19-0562
@@ -341,6 +328,7 @@ class ShutterReleaseLever:
 
 
 class ExposureLevelLever:
+    # no individual part number available
 
     def __init__(self, exposure_control_system=None):
         self.exposure_control_system = exposure_control_system
@@ -367,6 +355,7 @@ class ExposureLevelLever:
 
 
 class ExposureBoundsLever:
+    # no individual part number available
 
     def __init__(self, exposure_control_system=None):
         self.exposure_control_system = exposure_control_system
@@ -391,6 +380,8 @@ class ExposureBoundsLever:
 
 
 class ShutterLockLever:
+    # part number 19-0566
+
     def __init__(self, exposure_control_system=None):
         self.exposure_control_system = exposure_control_system
         self.blocks = False
@@ -409,6 +400,7 @@ class ShutterLockLever:
 
 
 class EELever:
+
     def __init__(self, exposure_control_system=None):
         self.exposure_control_system = exposure_control_system
 
@@ -434,10 +426,27 @@ class EELever:
         return self.exposure_control_system.mode == "Manual"
 
 
+class Iris:
+
+    def __init__(self, exposure_control_system=None, aperture=16):
+        self.exposure_control_system = exposure_control_system
+        self.aperture = aperture
+
+    def set_aperture(self, value):
+
+        # when the shutter is cocked, the iris follows the aperture setting
+        if self.exposure_control_system.shutter.cocked:
+            self.aperture = value
+
+        # when the shutter is uncocked, the iris only closes in response to aperture setting changes
+        elif value > self.aperture:
+            self.aperture = value
+
+
 class LightMeter:
 
-    def __init__(self, camera=None, incident_light=0, battery=None):
-        self.camera = camera
+    def __init__(self, exposure_control_system=None, incident_light=0, battery=None):
+        self.exposure_control_system = exposure_control_system
         self.incident_light = incident_light
         self.battery = battery
 
@@ -447,14 +456,14 @@ class LightMeter:
 
         # If the light meter has not been removed from the camera, we will take the
         # measurement from the camera's environment - if the lens cap is not on.
-        if not self.camera:
+        if not self.exposure_control_system:
             # If the rest of the camera is not around, we can still measure incident light on the meter.
             return self.incident_light
 
-        if self.camera.lens_cap.on:
+        if self.exposure_control_system.camera.lens_cap.on:
             return 0
 
-        return self.camera.environment.scene_luminosity
+        return self.exposure_control_system.camera.environment.scene_luminosity
 
 
 class Back:

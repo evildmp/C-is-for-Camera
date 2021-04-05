@@ -36,31 +36,31 @@ class TestCamera(object):
         c = Camera()
         c.exposure_control_system.shutter.cocked = True
         c.aperture = 8
-        assert c.iris.aperture == 8
+        assert c.exposure_control_system.iris.aperture == 8
         c.aperture = 2
-        assert c.iris.aperture == 2
+        assert c.exposure_control_system.iris.aperture == 2
         c.aperture = 16
-        assert c.iris.aperture == 16
+        assert c.exposure_control_system.iris.aperture == 16
 
     def test_only_decreasing_aperture_settings_are_applied_when_shutter_is_uncocked(self):
         c = Camera()
         c.exposure_control_system.shutter.cocked = False
         c.aperture = 8
-        c.iris.aperture = 8
-        assert c.iris.aperture == 8
+        c.exposure_control_system.iris.aperture = 8
+        assert c.exposure_control_system.iris.aperture == 8
         c.aperture = 2
-        assert c.iris.aperture == 8
+        assert c.exposure_control_system.iris.aperture == 8
         c.aperture = 16
-        assert c.iris.aperture == 16
+        assert c.exposure_control_system.iris.aperture == 16
 
     def test_aperture_setting_is_applied_as_soon_as_shutter_is_cocked(self):
         c = Camera()
         c.exposure_control_system.shutter.cocked = False
         c.aperture = 8
-        c.iris.aperture = 16
-        assert c.iris.aperture == 16
+        c.exposure_control_system.iris.aperture = 16
+        assert c.exposure_control_system.iris.aperture == 16
         c.exposure_control_system.shutter.cock()
-        assert c.iris.aperture == 8
+        assert c.exposure_control_system.iris.aperture == 8
 
     def test_invalid_aperture_settings_are_rejected(self):
         c = Camera()
@@ -73,7 +73,12 @@ class TestCamera(object):
         c = Camera()
         c.environment.scene_luminosity = 1024
         c.aperture = "A"
-        assert pytest.approx(c.iris.aperture, 8)
+        assert pytest.approx(c.exposure_control_system.iris.aperture, 8)
+
+    def test_we_can_do_state_after_winding(self):
+        c = Camera()
+        c.film_advance_lever.wind()
+        c.state()
 
 
 class TestShutterButton(object):
@@ -280,7 +285,7 @@ class TestExposureControlSystem(object):
         c = Camera()
         c.exposure_control_system.mode = "Manual"
         assert c.exposure_control_system.meter() is None
-        assert c.iris.aperture == 16
+        assert c.exposure_control_system.iris.aperture == 16
 
     def test_exposure_meter(self):
         c = Camera()
