@@ -5,7 +5,6 @@ from camera import (
     ShutterReleaseLever, ExposureLevelLever, ExposureBoundsLever, EELever, Film
     )
 
-
 class TestCamera(object):
 
     def test_film_advance_increments_counter(self):
@@ -31,6 +30,11 @@ class TestCamera(object):
         assert c.film_speed == 400
         with pytest.raises(c.NonExistentFilmSpeed):
             c.film_speed = 130
+
+    def test_selected_aperture_settings_are_applied_to_exposure_control_system(self):
+        c = Camera()
+        c.aperture = 8
+        assert c.exposure_control_system.aperture_set_lever.aperture == 8
 
     def test_selected_aperture_settings_are_applied_when_shutter_is_cocked(self):
         c = Camera()
@@ -68,17 +72,6 @@ class TestCamera(object):
             c.aperture = 1.2
         with pytest.raises(c.ApertureOutOfRange):
             c.aperture = 22
-
-    def test_ae_mode_aperture_settings_are_applied(self):
-        c = Camera()
-        c.environment.scene_luminosity = 1024
-        c.aperture = "A"
-        assert pytest.approx(c.exposure_control_system.iris.aperture, 8)
-
-    def test_we_can_do_state_after_winding(self):
-        c = Camera()
-        c.film_advance_lever.wind()
-        c.state()
 
 
 class TestShutterButton(object):
@@ -337,7 +330,7 @@ class TestShutterReleaseLever(object):
         c = Camera()
         c.environment.scene_luminosity = 256
         ecs = c.exposure_control_system
-        assert pytest.approx(ecs.meter(), 4)
+        assert pytest.approx(ecs.meter()) == 4
         assert ecs.mode == "Shutter priority"
         ecs.shutter.cock()
         ecs.shutter_release_lever.depress()
@@ -406,7 +399,7 @@ class TestEELever(object):
         c = Camera()
         ecs = c.exposure_control_system
         assert ecs.mode == "Shutter priority"
-        assert pytest.approx(ecs.ee_lever.activate(16), 16)
+        assert pytest.approx(ecs.ee_lever.activate(16)) == 16
 
 
 class TestShutterLockLever(object):
@@ -423,6 +416,105 @@ class TestShutterLockLever(object):
         assert ecs.shutter_lock_lever.blocks == True
         ecs.shutter_lock_lever.deactivate()
         assert ecs.shutter_lock_lever.blocks == False
+
+
+class TestApertureSetLever(object):
+
+    def test_lever_is_only_set_by_camera_in_manual_mode(self):
+        c = Camera()
+        c.aperture = "A"
+        assert c.exposure_control_system.aperture_set_lever.aperture == 16
+
+    def test_when_shutter_is_cocked_all_aperture_ring_movement_controls_iris(self):
+        ecs = ExposureControlSystem()
+        ecs.mode = "Manual"
+        ecs.shutter.cock()
+        ecs.aperture_set_lever.aperture = 8
+        assert ecs.aperture_set_lever.aperture == 8
+        assert ecs.iris.aperture == 8
+        ecs.aperture_set_lever.aperture = 16
+        assert ecs.aperture_set_lever.aperture == 16
+        assert ecs.iris.aperture == 16
+        ecs.aperture_set_lever.aperture = 2
+        assert ecs.aperture_set_lever.aperture == 2
+        assert ecs.iris.aperture == 2
+
+    def test_when_shutter_is_uncocked_all_iris_only_closes_further_in_response_to_aperture_ring_movement(self):
+        ecs = ExposureControlSystem()
+        ecs.mode = "Manual"
+        ecs.aperture_set_lever._aperture = 8
+        # decreasing aperture setting closes iris, moves lever
+        ecs.aperture_set_lever.aperture = 16
+        assert ecs.aperture_set_lever.aperture == 16
+        assert ecs.iris.aperture == 16
+        # increasing aperture setting has no effect on iris
+        ecs.aperture_set_lever.aperture = 2
+        assert ecs.aperture_set_lever.aperture == 2
+        assert ecs.iris.aperture == 16
+
+    def test_when_cocking_the_shutter_the_iris_immediately_responds(self):
+        ecs = ExposureControlSystem()
+        ecs.mode = "Manual"
+        ecs.aperture_set_lever.aperture = 16
+        assert ecs.aperture_set_lever.aperture == 16
+        assert ecs.iris.aperture == 16
+        # change the setting but nothing happens
+        ecs.aperture_set_lever.aperture = 2
+        assert ecs.aperture_set_lever.aperture == 2
+        assert ecs.iris.aperture == 16
+        # until the shutter is cocked
+        ecs.shutter.cock()
+        assert ecs.iris.aperture == 2
+
+    def test_when_shutter_is_cocked_depressing_release_controls_iris(self):
+        c = Camera()
+        c.exposure_control_system.shutter.cock()
+        c.environment.scene_luminosity = 1024
+        c.exposure_control_system.mode = "Shutter priority"
+        assert pytest.approx(c.exposure_control_system.meter()) == 8
+        c.shutter_button.press()
+        assert pytest.approx(c.exposure_control_system.aperture_set_lever.aperture) == 8
+        assert pytest.approx(c.exposure_control_system.iris.aperture) == 8
+
+    def test_when_shutter_is_uncocked_depressing_release_can_only_close_iris(self):
+        c = Camera()
+        c.environment.scene_luminosity = 1024
+        c.exposure_control_system.iris.aperture = 8
+        c.exposure_control_system.mode = "Shutter priority"
+        assert pytest.approx(c.exposure_control_system.meter()) == 8
+        c.shutter_button.press()
+        assert pytest.approx(c.exposure_control_system.aperture_set_lever.aperture) == 8
+        assert pytest.approx(c.exposure_control_system.iris.aperture) == 8
+
+        c.environment.scene_luminosity = 256
+        assert pytest.approx(c.exposure_control_system.meter()) == 4
+        c.shutter_button.press()
+        assert pytest.approx(c.exposure_control_system.aperture_set_lever.aperture) == 4
+        assert pytest.approx(c.exposure_control_system.iris.aperture) == 8
+
+        c.environment.scene_luminosity = 4096
+        assert pytest.approx(c.exposure_control_system.meter()) == 16
+        c.shutter_button.press()
+        assert pytest.approx(c.exposure_control_system.aperture_set_lever.aperture) == 16
+        assert pytest.approx(c.exposure_control_system.iris.aperture) == 16
+
+    def test_when_cocking_the_shutter_the_iris_opens_as_wide_as_possible(self):
+        ecs = ExposureControlSystem()
+        ecs.mode = "Shutter priority"
+        assert ecs.aperture_set_lever.aperture == 16
+        assert ecs.iris.aperture == 16
+        ecs.shutter.cock()
+        assert ecs.aperture_set_lever.aperture == 1.7
+        assert ecs.iris.aperture == 1.7
+
+
+    #
+    # * aperture-priority mode, when:
+    #
+    #   * shutter is cocked, depressing the shutter release lever adjusts the iris to the auto-exposure aperture (if in range)
+    #   * shutter is uncocked, depressing the shutter release lever only adjusts the iris to a smaller auto-exposure aperture
+    #     (if in range)
+    #   * cocking the shutter, the iris is immediately adjusted to the widest possible aperture
 
 
 class TestFilm(object):
@@ -464,3 +556,10 @@ class TestBack(object):
         assert c.back.open() != "Film is ruined"
         assert c.film.ruined == False
 
+
+class TestRegressions(object):
+
+    def test_we_can_do_state_after_winding(self):
+        c = Camera()
+        c.film_advance_lever.wind()
+        c.state()

@@ -27,11 +27,11 @@ class Camera:
         self.frame_counter = 0
         self.film_speed = 100
         self.shutter_speed = 1/125
+        self.aperture = "A"
         self.exposure_indicator = self.exposure_control_system.meter
 
         self.shutter_button = ShutterButton(camera=self)
         self.film_advance_lever = FilmAdvanceLever(camera=self)
-        self.aperture = "A"
 
 
     # ----------- Camera settings -----------
@@ -66,7 +66,8 @@ class Camera:
             raise self.ApertureOutOfRange
 
         else:
-            self.exposure_control_system.iris.set_aperture(value)
+            self.exposure_control_system.mode = "Manual"
+            self.exposure_control_system.aperture_set_lever.aperture = value
 
         self._aperture = value
 
@@ -101,7 +102,7 @@ class Camera:
         print(f"Selected speed:            1/{int(1/self.shutter_speed)}")
         print()
         print("------------------ indicators -------------------")
-        print(f"Exposure_indicator:        ƒ/{self.exposure_indicator()}")
+        print(f"Light meter reading        ƒ/{self.exposure_indicator():.2g}")
         print(f"Frame counter:             {self.frame_counter}")
         print()
 
@@ -111,12 +112,12 @@ class Camera:
         print(f"Film advance mechanism:    {self.film_advance_mechanism.advanced}")
         print(f"Shutter cocked:            {self.exposure_control_system.shutter.cocked}")
         print(f"Shutter timer:             1/{int(1/self.exposure_control_system.shutter.timer)} seconds")
-        print(f"Iris aperture:             ƒ/{self.exposure_control_system.iris.aperture}")
+        print(f"Iris aperture:             ƒ/{self.exposure_control_system.iris.aperture:.2g}")
         print(f"Camera exposure settings:  {self.exposure_control_system.exposure_value()} EV")
         print()
 
         print("------------------ Metering ---------------------")
-        print(f"Light meter reading:        {self.exposure_control_system.light_meter.reading()} cd/m^2")
+        print(f"Metered light:              {self.exposure_control_system.light_meter.reading()} cd/m^2")
         print(f"Exposure target:            {self.exposure_control_system.measured_ev()} EV")
         print(f"Mode:                       {self.exposure_control_system.mode}")
         print(f"Battery:                    {self.exposure_control_system.battery} V")
@@ -220,6 +221,7 @@ class ExposureControlSystem:
         self.ee_lever = EELever(exposure_control_system=self)
         self.exposure_level_lever = ExposureLevelLever(exposure_control_system=self)
         self.exposure_bounds_lever = ExposureBoundsLever(exposure_control_system=self)
+        self.aperture_set_lever = ApertureSetLever(exposure_control_system=self)
 
     # measured_ev is the exposure value from the system (that the aperture will need to
     # respond to) and is determined by the light reading and the film-speed.
@@ -238,7 +240,6 @@ class ExposureControlSystem:
 
         return math.pow(2, self.measured_ev()/2) * math.sqrt(self.shutter.timer)
 
-    # what the meter needle actually shows (but only if the camera is actually metering)
     def meter(self):
         if self.mode == "Manual" or self.theoretical_aperture() is None:
             return
@@ -246,15 +247,21 @@ class ExposureControlSystem:
         theoretical_aperture = self.theoretical_aperture()
 
         if theoretical_aperture < 1.7 and math.isclose(theoretical_aperture, 1.7):
-            return 1.7
+            reading = 1.7
         elif theoretical_aperture > 16 and math.isclose(theoretical_aperture, 16):
-           return 16
+           reading = 16
         elif theoretical_aperture < 1.7:
-            return "Under"
+            reading = "Under"
         elif theoretical_aperture > 16:
-            return "Over"
+            reading = "Over"
         else:
-            return theoretical_aperture
+            reading = theoretical_aperture
+        return reading
+
+    # what the meter needle actually shows (but only if the camera is actually metering)
+    def read_meter(self):
+        if self.meter():
+            print(f"Light meter reading: ƒ1/{self.meter():.2g}")
 
     def exposure_value(self):
         # returns the EV of the exposure system
@@ -296,10 +303,12 @@ class Shutter:
         print("Cocking shutter")
         self.cocked = True
 
-        # cocking the shutter causes the aperture value to be applied to the iris
-        if self.exposure_control_system and self.exposure_control_system.camera:
-            print("Applying aperture value to iris")
-            self.exposure_control_system.iris.set_aperture(self.exposure_control_system.camera.aperture)
+        # cocking the shutter causes the set_aperture_lever value to be applied to the iris
+        if self.exposure_control_system:
+            if self.exposure_control_system.mode == "Shutter priority":
+                self.exposure_control_system.aperture_set_lever.aperture = 1.7
+            self.exposure_control_system.iris.aperture = self.exposure_control_system.aperture_set_lever.aperture
+            print(f"Applying aperture value ƒ/{self.exposure_control_system.aperture_set_lever.aperture:.2g} to iris")
 
         print("Cocked")
         return "Cocked"
@@ -320,9 +329,22 @@ class ShutterReleaseLever:
             return
 
         self.exposure_control_system.exposure_level_lever.activate()
+        self.exposure_control_system.read_meter()
 
-        if not self.exposure_control_system.shutter_lock_lever.blocks:
-            self.exposure_control_system.shutter.trip()
+        if self.exposure_control_system.shutter_lock_lever.blocks:
+            self.exposure_control_system.exposure_level_lever.deactivate()
+            print("Shutter release blocked")
+
+        if self.exposure_control_system.mode == "Shutter priority":
+            aperture = self.exposure_control_system.aperture_set_lever.aperture
+            if self.exposure_control_system.shutter.cocked:
+                self.exposure_control_system.iris.aperture = aperture
+            elif aperture > self.exposure_control_system.iris.aperture:
+                self.exposure_control_system.iris.aperture = aperture
+
+            print(f"Applying aperture value ƒ/{self.exposure_control_system.aperture_set_lever.aperture:.2g} to iris")
+
+        self.exposure_control_system.shutter.trip()
 
         self.exposure_control_system.exposure_level_lever.deactivate()
 
@@ -408,10 +430,10 @@ class EELever:
             self.position = 0  # 0 is rotated fully anti-clockwise; 1 is rotated fully clockwise
 
     def activate(self, aperture_value):
-        if self.locked:
+        if self.locked():
             return "Locked"
 
-        self.exposure_control_system.iris.set_aperture(aperture_value)
+        self.exposure_control_system.aperture_set_lever.aperture = aperture_value
 
         return aperture_value
 
@@ -422,8 +444,32 @@ class EELever:
     def locked(self):
         if not self.exposure_control_system:
             return
-
         return self.exposure_control_system.mode == "Manual"
+
+
+class ApertureSetLever:
+    # part number Y13-5255 (I think)
+    # the lever is partially decoupled from the iris; only under certain circumstances does the iris
+    # respond to it
+
+    def __init__(self, exposure_control_system=None, aperture=16):
+        self.exposure_control_system = exposure_control_system
+        self._aperture = aperture
+        # self.aperture = aperture
+
+    @property
+    def aperture(self):
+        return self._aperture
+
+    @aperture.setter
+    def aperture(self, value):
+        # when the shutter is cocked, the aperture_set_lever follows the aperture setting
+        if self.exposure_control_system.mode == "Manual":
+            if self.exposure_control_system.shutter.cocked:
+                self.exposure_control_system.iris.aperture = value
+            elif value > self.aperture:
+                self.exposure_control_system.iris.aperture = value
+        self._aperture = value
 
 
 class Iris:
@@ -431,16 +477,6 @@ class Iris:
     def __init__(self, exposure_control_system=None, aperture=16):
         self.exposure_control_system = exposure_control_system
         self.aperture = aperture
-
-    def set_aperture(self, value):
-
-        # when the shutter is cocked, the iris follows the aperture setting
-        if self.exposure_control_system.shutter.cocked:
-            self.aperture = value
-
-        # when the shutter is uncocked, the iris only closes in response to aperture setting changes
-        elif value > self.aperture:
-            self.aperture = value
 
 
 class LightMeter:
