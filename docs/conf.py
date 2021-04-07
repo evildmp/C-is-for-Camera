@@ -17,7 +17,7 @@ import os
 
 # -- Project information -----------------------------------------------------
 
-project = 'C is for Camera'
+html_title = full_title = project = 'C is for Camera'
 copyright = '2021, Daniele Procida'
 author = 'Daniele Procida'
 

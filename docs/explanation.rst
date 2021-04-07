@@ -18,8 +18,7 @@ remains open when it's released).
 Other examples are a film advance mechanism, and an exposure mechanism. Many of these subsystems interact with each
 other. For example in this camera, advancing the film also cocks the shutter.
 
-Actions that you'd perform with a physical camera are methods of the Python objects. For example, once you have
-instantiated a camera, you can advance the film, then trip the shutter::
+See :ref:`get-started` for examples.
 
     >>> c.film_advance_lever.wind()
     On frame 0 (of 24)

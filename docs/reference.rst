@@ -57,7 +57,7 @@ The sub-systems can be accessed **directly**. For example, you can do things lik
     >>> c = Camera()
     >>> c.exposure_control_system.shutter.cock()
     Cocking shutter
-    Applying aperture value to iris
+    Applying aperture value ƒ/1.7 to iris
     Cocked
 
 which you wouldn't or even couldn't do, unless you had the camera partially disassembled in front of you. In normal

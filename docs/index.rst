@@ -8,7 +8,7 @@ The purpose of this project is to explore and understand the logic in the mechan
 object-oriented programming to represent real-world objects. It's also a way to appreciate the intricate mechanical
 logic embodied in a device like a camera.
 
-The level of modelling so far varies - in the exposure control system, the mechanism is modelled down to the level 
+The level of modelling so far varies - in the exposure control system, the mechanism is modelled down to the level
 of individual levers and their interactions. In fact some of the modelling goes down to the level of parts that are not
 even detailed separately in Canon's repair manual.
 
@@ -26,13 +26,15 @@ See :ref:`understanding-camera` for more about *how* the camera is modelled.
     Advancing film
     On frame 1 (of 24)
     Cocking shutter
-    Applying aperture value to iris
+    Applying aperture value ƒ/1.7 to iris
     Cocked
     >>> c.shutter_button.press()
+    Light meter reading: ƒ1/16
+    Applying aperture value ƒ/16 to iris
     Shutter opening for 1/128 seconds
     Shutter closes
     Shutter uncocked
-    
+
 
 See :ref:`get-started` for more.
 
