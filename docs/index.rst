@@ -1,4 +1,4 @@
-c is for Camera
+C is for Camera
 ===============
 
 A 35mm camera, based on the `Canonet G-III QL17 <https://en.wikipedia.org/wiki/Canonet_G-III_QL17>`_ rangefinder,
@@ -16,6 +16,10 @@ See :ref:`understanding-camera` for more about *how* the camera is modelled.
 
 .. image:: /images/QL17.jpg
    :alt: 'Canonet G-III QL17'
+
+
+Quick example
+--------------
 
 ::
 
@@ -49,3 +53,5 @@ Contents
     how-to
     reference
     explanation
+
+(See `Diátaxis framework <https://diataxis.fr/>`_ for the documentation structure.)
