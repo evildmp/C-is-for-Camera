@@ -13,10 +13,6 @@ class Camera:
         self.exposure_control_system = ExposureControlSystem(
             mode="Shutter priority", camera=self, film_speed=100, battery=1.44
         )
-
-        # sub-systems that belong to other modules of the camera, but we want them as direct attributes for convenience
-        # self.shutter = self.exposure_control_system.shutter
-
         self.film_advance_mechanism = FilmAdvanceMechanism(camera=self)
         self.film_rewind_mechanism = FilmRewindMechanism(camera=self)
         self.lens_cap = LensCap(on=False)
@@ -36,6 +32,8 @@ class Camera:
 
     # ----------- Camera settings -----------
 
+    # The camera will only allow the shutter speeds marked on the shutter ring to be applied, and will
+    # raise an exception if you try to set shutter_speed to an illegal value.
     @property
     def shutter_speed(self):
         return self._shutter_speed
@@ -53,6 +51,8 @@ class Camera:
         pass
 
 
+    # The camera will only allow the aperture settings marked on the aperture ring to be applied, and will
+    # raise an exception if you try to set aperture to an illegal value.
     @property
     def aperture(self):
         return self._aperture
@@ -76,6 +76,8 @@ class Camera:
         pass
 
 
+    # The camera will only allow the film speed settings marked on the aperture ring to be applied, and will
+    # raise an exception if you try to set the film speed to an illegal value.
     @property
     def film_speed(self):
         return self._film_speed
@@ -262,7 +264,8 @@ class ExposureControlSystem:
     def read_meter(self):
         if self.meter():
             if type(self.meter()) is not str:
-                print(f"Light meter reading: ƒ1/{self.meter():.2g}")
+                print(f"Light meter reading: ƒ/{self.meter():.2g}")
+
 
     def exposure_value(self):
         # returns the EV of the exposure system
@@ -272,7 +275,6 @@ class ExposureControlSystem:
             return "Shutter priority"
 
 class Shutter:
-    # The shutter is closed by default.
     def __init__(self, exposure_control_system=None, timer=1/128, closed=True, cocked=False):
         self.exposure_control_system = exposure_control_system
         self.timer = timer
