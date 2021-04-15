@@ -261,7 +261,8 @@ class ExposureControlSystem:
     # what the meter needle actually shows (but only if the camera is actually metering)
     def read_meter(self):
         if self.meter():
-            print(f"Light meter reading: ƒ1/{self.meter():.2g}")
+            if type(self.meter()) is not str:
+                print(f"Light meter reading: ƒ1/{self.meter():.2g}")
 
     def exposure_value(self):
         # returns the EV of the exposure system
@@ -334,6 +335,7 @@ class ShutterReleaseLever:
         if self.exposure_control_system.shutter_lock_lever.blocks:
             self.exposure_control_system.exposure_level_lever.deactivate()
             print("Shutter release blocked")
+            return
 
         if self.exposure_control_system.mode == "Shutter priority":
             aperture = self.exposure_control_system.aperture_set_lever.aperture
