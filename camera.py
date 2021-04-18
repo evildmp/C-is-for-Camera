@@ -24,7 +24,7 @@ class Camera:
         self.film_speed = 100
         self.shutter_speed = 1/125
         self.aperture = "A"
-        self.exposure_indicator = self.exposure_control_system.meter
+        self.exposure_indicator = self.exposure_control_system.read_meter
 
         self.shutter_button = ShutterButton(camera=self)
         self.film_advance_lever = FilmAdvanceLever(camera=self)
@@ -88,6 +88,7 @@ class Camera:
             possible_settings = ", ".join([f"{s}" for s in self.selectable_film_speeds])
             raise self.NonExistentFilmSpeed(f"Possible film speeds are {possible_settings}")
 
+        self.exposure_control_system.film_speed = value
         self._film_speed = value
 
     class NonExistentFilmSpeed(Exception):
@@ -103,8 +104,8 @@ class Camera:
         print(f"Film speed:                {self.film_speed} ISO")
         print(f"Selected speed:            1/{int(1/self.shutter_speed)}")
         print()
-        print("------------------ indicators -------------------")
-        print(f"Light meter reading        ƒ/{self.exposure_indicator():.2g}")
+        print("------------------ Indicators -------------------")
+        print(f"Exposure indicator         {self.exposure_indicator()}")
         print(f"Frame counter:             {self.frame_counter}")
         print()
 
@@ -264,7 +265,9 @@ class ExposureControlSystem:
     def read_meter(self):
         if self.meter():
             if type(self.meter()) is not str:
-                print(f"Light meter reading: ƒ/{self.meter():.2g}")
+                return f"ƒ/{self.meter():.2g}"
+            else:
+                return self.meter()
 
 
     def exposure_value(self):

@@ -283,7 +283,13 @@ class TestExposureControlSystem(object):
     def test_exposure_meter(self):
         c = Camera()
         for sl in range(0, 17000, 1000):
-            assert  c.exposure_indicator() == c.exposure_control_system.meter()
+            assert  c.exposure_indicator() == c.exposure_control_system.read_meter()
+
+    def test_new_film_speed_setting_is_applied_to_ecs(self):
+        c = Camera()
+        assert c.exposure_control_system.film_speed == 100
+        c.film_speed = 400
+        assert c.exposure_control_system.film_speed == 400
 
 
 class TestShutterReleaseLever(object):
@@ -562,4 +568,12 @@ class TestRegressions(object):
     def test_we_can_do_state_after_winding(self):
         c = Camera()
         c.film_advance_lever.wind()
+        c.state()
+
+    def test_we_can_do_state_when_over_or_under(self):
+        c = Camera()
+        c.state()
+        c.film_speed = 400
+        c.aperture = "A"
+        c.shutter_speed = 1/125
         c.state()
