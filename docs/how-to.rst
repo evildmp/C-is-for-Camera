@@ -15,21 +15,24 @@ All the examples below assume that you have already instantiated a ``Camera`` ob
 Advance the film
 ~~~~~~~~~~~~~~~~~~~~
 
-.. image:: /images/wind-film-lever.jpg
-   :width: 50%
-   :alt: 'Wind the film lever'
+..  rst-class:: column
 
 ::
 
     c.film_advance_lever.wind()
 
+..  rst-class:: column
+
+..  image:: /images/wind-film-lever.jpg
+    :alt: 'Wind the film lever'
+
+
+
+
+..  rst-class:: clearfix
 
 Set a film speed setting
 ~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. image:: /images/set-film-speed.jpg
-   :width: 100%
-   :alt: 'Set the film speed'
 
 ::
 
@@ -37,48 +40,51 @@ Set a film speed setting
 
 Selectable film speeds are 25, 50, 100, 200, 400, 800 ASA.
 
+..  image:: /images/set-film-speed.jpg
+   :alt: 'Set the film speed'
+
 
 Select shutter-priority exposure mode mode
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. image:: /images/set-aperture-to-A.jpg
-   :width: 50%
-   :alt: 'Set aperture to "A"'
-
+..  rst-class:: column
 
 ::
 
     c.aperture = "A"
 
+..  rst-class:: column
+
+..  image:: /images/set-aperture-to-A.jpg
+    :alt: 'Set aperture to "A"'
+
+
+..  rst-class:: clearfix
+
 Check the light meter
 ~~~~~~~~~~~~~~~~~~~~~~
-
-.. image:: /images/check-exposure-indicator.jpg
-   :width: 100%
-   :alt: 'Check the light meter'
 
 ::
 
     c.exposure_indicator()
 
+..  image:: /images/check-exposure-indicator.jpg
+    :alt: 'Check the light meter'
+
+
 Press the shutter button
 ~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. image:: /images/take-photo.jpg
-   :width: 100%
-   :alt: 'Take a photo'
 
 ::
 
     c.shutter_button.press()
 
+..  image:: /images/take-photo.jpg
+    :alt: 'Take a photo'
+
 
 Set aperture manually
 ~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. image:: /images/set-aperture-manually.jpg
-   :width: 100%
-   :alt: 'Select the aperture manually'
 
 ::
 
@@ -86,16 +92,19 @@ Set aperture manually
 
 Selectable ƒ-numbers are between 1.7 and 16.
 
+..  image:: /images/set-aperture-manually.jpg
+    :alt: 'Select the aperture manually'
+
+
 Open back
 ~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. image:: /images/open-back.jpg
-   :width: 100%
-   :alt: 'Open the back of the camera'
 
 ::
 
     c.back.open()
+
+..  image:: /images/open-back.jpg
+    :alt: 'Open the back of the camera'
 
 
 How to run tests
