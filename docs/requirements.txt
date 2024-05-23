@@ -1,4 +1,4 @@
-Sphinx==3.3.1
+Sphinx==7.3.7
 sphinx-autobuild==2020.9.1
 sphinxcontrib-spelling==7.0.1
 furo
