@@ -213,7 +213,7 @@ The leaves of the iris only actually move under the following conditions:
   * cocking the shutter, the iris is immediately adjusted to the widest possible aperture
 
 
-Why build a 40-year-old camera in Python?
+Why build a 50-year-old camera in Python?
 -----------------------------------------
 
 I love film cameras and their mechanisms, and spend a lot of time repairing and servicing them. The mechanisms in a
